@@ -1,0 +1,439 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id            String                @id @default(uuid())
+  nome          String
+  email         String                @unique
+  senha_hash    String
+  role          String                @default("AGENTE") // ADMIN | AGENTE | FINANCEIRO
+  ativo         Boolean               @default(true)
+  criado_em     DateTime              @default(now())
+  atualizado_em DateTime              @default(now()) @updatedAt
+
+  cotacoes      Cotacao[]
+  transacoes    TransacaoFinanceira[]
+  sales         Sale[]
+  comissoes     ConsultantCommission[]
+  auditLogs     FinancialAuditLog[]
+  
+  // Chamados / ITSM
+  chamadosCriados     ChamadoSuporte[] @relation("ChamadosCriados")
+  chamadosAtribuidos  ChamadoSuporte[] @relation("ChamadosAtribuidos")
+
+  @@map("usuarios")
+}
+
+model Cotacao {
+  id                          String                @id @default(uuid())
+  criado_por_usuario_id       String
+  usuario                     Usuario               @relation(fields: [criado_por_usuario_id], references: [id])
+  cliente_nome                String
+  destino                     String
+  data_ida                    DateTime
+  data_volta                  DateTime
+  adultos                     Int
+  criancas                    Int                   @default(0)
+  idades_criancas             String                @default("[]")
+  quartos                     Int
+  cotacao_usd                 Float
+  cotacao_eur                 Float
+  comissao_padrao_agencia_pct Float
+  criado_em                   DateTime              @default(now())
+  atualizado_em               DateTime              @updatedAt
+
+  status                      String                @default("DRAFT") // DRAFT | FINALIZADA | REABERTA
+  versao_atual                Int                   @default(1)
+
+  hoteis                      HotelCotado[]
+  sections                    QuoteProductSection[]
+  versoes                     CotacaoVersao[]
+  transacoes                  TransacaoFinanceira[]
+  sales                       Sale[]
+  chamados                    ChamadoSuporte[]
+
+  @@map("cotacoes")
+}
+
+model CotacaoVersao {
+  id                      String   @id @default(uuid())
+  cotacao_id              String
+  cotacao                 Cotacao  @relation(fields: [cotacao_id], references: [id], onDelete: Cascade)
+  versao_numero           Int
+  motivo_reabertura       String
+  reaberto_por_usuario_id String
+  snapshot_dados          String   // JSON snapshot completo da cotação
+  criado_em               DateTime @default(now())
+
+  @@map("cotacoes_versoes")
+}
+
+model HotelCotado {
+  id             String        @id @default(uuid())
+  cotacao_id     String
+  cotacao        Cotacao       @relation(fields: [cotacao_id], references: [id], onDelete: Cascade)
+  hotel_nome     String
+  link_hotel     String?       // URL segura https://
+  foto_url       String?       // Foto opcional
+  descricao      String?       // Breve descrição opcional
+  ordem_exibicao Int           @default(0)
+  canais         CanalCotado[]
+
+  @@map("hoteis_cotados")
+}
+
+model CanalCotado {
+  id                      String      @id @default(uuid())
+  hotel_cotado_id         String
+  hotel_cotado            HotelCotado @relation(fields: [hotel_cotado_id], references: [id], onDelete: Cascade)
+  canal_nome              String
+  valor_mostrado          Float
+  taxas                   Float       @default(0)
+  moeda                   String      // BRL | USD | EUR
+  comissao_fornecedor_pct Float
+  comissao_venda_pct      Float
+  categoria_quarto        String
+  cafe_da_manha           Boolean
+  reembolsavel_ate        DateTime?
+  observacoes             String?     @default("")
+  escolhido_manual        Boolean     @default(false)
+  
+  // Campos calculados
+  valor_comissao          Float
+  custo_liquido           Float
+  cotacao_utilizada       Float
+  custo_em_brl            Float
+  valor_final_venda       Float
+  menor_custo_do_grupo    Boolean     @default(false)
+  maior_venda_do_grupo    Boolean     @default(false)
+  
+  criado_em               DateTime    @default(now())
+
+  @@map("canais_cotados")
+}
+
+// -------------------------------------------------------------
+// TRAVEL QUOTE BUILDER — MÓDULO MULTIPRODUTO EXTENSÍVEL
+// -------------------------------------------------------------
+
+model QuoteProductSection {
+  id           String               @id @default(uuid())
+  cotacao_id   String
+  cotacao      Cotacao              @relation(fields: [cotacao_id], references: [id], onDelete: Cascade)
+  product_type String               // FLIGHT | TRANSFER | TICKET | TOUR | TRAVEL_INSURANCE | CAR_RENTAL | PARK | CUSTOM_SERVICE
+  title        String
+  description  String?
+  sort_order   Int                  @default(0)
+  enabled      Boolean              @default(true)
+  created_at   DateTime             @default(now())
+  updated_at   DateTime             @updatedAt
+
+  options      QuoteProductOption[]
+
+  @@map("quote_product_sections")
+}
+
+model QuoteProductOption {
+  id            String              @id @default(uuid())
+  section_id    String
+  section       QuoteProductSection @relation(fields: [section_id], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  photo_url     String?
+  external_link String?
+  price         Float               @default(0)
+  currency      String              @default("BRL")
+  selected      Boolean             @default(false)
+  sort_order    Int                 @default(0)
+  metadata      String?             @default("{}") // JSON validado por schemas Zod por tipo
+  created_at    DateTime            @default(now())
+  updated_at    DateTime            @updatedAt
+
+  @@map("quote_product_options")
+}
+
+// -------------------------------------------------------------
+// SISTEMA OPERACIONAL FINANCEIRO CANÔNICO (FIXTUR MASTER)
+// -------------------------------------------------------------
+
+model Sale {
+  id                          String                 @id @default(uuid())
+  sale_number                 String                 @unique // Ex: VEN-2026-0001
+  cotacao_id                  String?
+  cotacao                     Cotacao?               @relation(fields: [cotacao_id], references: [id], onDelete: SetNull)
+  
+  cliente_nome                String
+  cliente_documento           String?                @default("")
+  cliente_email               String?                @default("")
+  cliente_telefone            String?                @default("")
+  destino                     String
+  data_viagem_inicio          DateTime
+  data_viagem_fim             DateTime
+  
+  consultor_id                String
+  consultor                   Usuario                @relation(fields: [consultor_id], references: [id])
+  
+  status                      String                 @default("CONFIRMED")
+  moeda                       String                 @default("BRL")
+  
+  // Métricas de rentabilidade
+  gross_sale_amount           Float                  // GMV
+  supplier_cost               Float                  // Custo fornecedores
+  pass_through_taxes          Float                  @default(0)
+  agency_revenue              Float                  // Lucro bruto
+  gross_margin_pct            Float
+  
+  consultant_commission_total Float                  @default(0)
+  payment_processing_fee      Float                  @default(0)
+  other_variable_costs        Float                  @default(0)
+  
+  contribution_margin         Float
+  contribution_margin_pct     Float
+  
+  refunded_amount             Float                  @default(0)
+  cancelled_amount            Float                  @default(0)
+  net_sale_amount             Float
+  
+  observacoes                 String?                @default("")
+  
+  criado_em                   DateTime               @default(now())
+  atualizado_em               DateTime               @updatedAt
+  
+  items                       SaleItem[]
+  receivables                 Receivable[]
+  payables                    Payable[]
+  comissoes                   ConsultantCommission[]
+  chamados                    ChamadoSuporte[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id                         String    @id @default(uuid())
+  sale_id                    String
+  sale                       Sale      @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  
+  item_type                  String    @default("HOTEL")
+  descricao                  String
+  fornecedor_nome            String
+  
+  moeda_original             String    @default("BRL")
+  valor_original             Float
+  cotacao_cambio             Float     @default(1.0)
+  custo_fornecedor_brl       Float
+  preco_venda_brl            Float
+  
+  comissao_fornecedor_pct    Float     @default(0)
+  comissao_fornecedor_valor  Float     @default(0)
+  
+  criado_em                  DateTime  @default(now())
+  payables                   Payable[]
+
+  @@map("sale_items")
+}
+
+model Receivable {
+  id               String    @id @default(uuid())
+  sale_id          String
+  sale             Sale      @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  
+  numero_parcela   Int       @default(1)
+  total_parcelas   Int       @default(1)
+  valor_parcela    Float
+  valor_pago       Float     @default(0)
+  saldo            Float
+  
+  data_vencimento  DateTime
+  data_pagamento   DateTime?
+  metodo_pagamento String    @default("PIX")
+  status           String    @default("OPEN")
+  documento_ref    String?   @default("")
+  
+  criado_em        DateTime  @default(now())
+  atualizado_em    DateTime  @updatedAt
+
+  @@map("receivables")
+}
+
+model Payable {
+  id               String    @id @default(uuid())
+  sale_id          String?
+  sale             Sale?     @relation(fields: [sale_id], references: [id], onDelete: SetNull)
+  sale_item_id     String?
+  sale_item        SaleItem? @relation(fields: [sale_item_id], references: [id], onDelete: SetNull)
+  
+  fornecedor_nome  String
+  descricao        String
+  categoria        String    @default("PAGAMENTO_FORNECEDOR")
+  
+  valor_original   Float
+  moeda_original   String    @default("BRL")
+  cotacao_cambio   Float     @default(1.0)
+  valor_brl        Float
+  
+  valor_pago       Float     @default(0)
+  saldo            Float
+  
+  data_vencimento  DateTime
+  data_pagamento   DateTime?
+  status           String    @default("OPEN")
+  metodo_pagamento String    @default("FATURADO")
+  comprovante_ref  String?   @default("")
+  
+  criado_em        DateTime  @default(now())
+  atualizado_em    DateTime  @updatedAt
+
+  @@map("payables")
+}
+
+model Fornecedor {
+  id                    String    @id @default(uuid())
+  nome_fantasia         String    @unique
+  razao_social          String?   @default("")
+  cnpj                  String?   @default("")
+  categoria             String    @default("OPERADORA_HOTEL") // OPERADORA_HOTEL | CONSOLIDADORA_AEREA | RECEPTIVO_TRANSFER | SEGURO_VIAGEM | OUTRO
+  telefone_plantao      String?   @default("")
+  email_plantao         String?   @default("")
+  prazo_faturamento_dias Int      @default(15)
+  chave_pix             String?   @default("")
+  dados_bancarios       String?   @default("")
+  ativo                 Boolean   @default(true)
+  observacoes           String?   @default("")
+  criado_em             DateTime  @default(now())
+  atualizado_em         DateTime  @updatedAt
+
+  @@map("fornecedores")
+}
+
+model CommissionPlan {
+  id                 String                 @id @default(uuid())
+  nome               String
+  descricao          String?                @default("")
+  base_calculo       String                 @default("AGENCY_REVENUE")
+  percentual_padrao  Float                  @default(10.0)
+  ativo              Boolean                @default(true)
+  criado_em          DateTime               @default(now())
+  atualizado_em      DateTime               @updatedAt
+  comissoes          ConsultantCommission[]
+
+  @@map("commission_plans")
+}
+
+model ConsultantCommission {
+  id                    String          @id @default(uuid())
+  sale_id               String
+  sale                  Sale            @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  
+  consultor_id          String
+  consultor             Usuario         @relation(fields: [consultor_id], references: [id])
+  
+  plan_id               String?
+  plan                  CommissionPlan? @relation(fields: [plan_id], references: [id], onDelete: SetNull)
+  
+  base_calculo_tipo     String          @default("AGENCY_REVENUE")
+  base_calculo_valor    Float
+  percentual_aplicado   Float
+  valor_comissao        Float
+  
+  status                String          @default("ACCRUED")
+  data_elegibilidade    DateTime?
+  data_pagamento        DateTime?
+  motivo_ajuste         String?         @default("")
+  
+  criado_em             DateTime        @default(now())
+  atualizado_em         DateTime        @updatedAt
+
+  @@map("consultant_commissions")
+}
+
+// -------------------------------------------------------------
+// OPERAÇÕES & SUPORTE A VIAGENS (ITSM / TICKET ENGINE)
+// -------------------------------------------------------------
+
+model ChamadoSuporte {
+  id              String    @id @default(uuid())
+  ticket_number   String    @unique // Ex: TCK-2026-0001
+  titulo          String
+  descricao       String
+  categoria       String    @default("SUPORTE_GERAL") // ALTERACAO_RESERVA | NO_SHOW_EMERGENCIA | UPGRADE_QUARTO | CANCELAMENTO_REEMBOLSO | PROBLEMA_PAGAMENTO | SUPORTE_GERAL
+  prioridade      String    @default("MEDIA") // BAIXA | MEDIA | ALTA | CRITICA_EMERGENCIA
+  
+  sla_minutos     Int       @default(240) // 4 horas
+  sla_limite      DateTime
+  
+  status          String    @default("ABERTO") // ABERTO | EM_ATENDIMENTO | AGUARDANDO_FORNECEDOR | RESOLVIDO | CANCELADO
+  
+  cliente_nome    String
+  cliente_contato String?   @default("")
+  
+  sale_id         String?
+  sale            Sale?     @relation(fields: [sale_id], references: [id], onDelete: SetNull)
+  
+  cotacao_id      String?
+  cotacao         Cotacao?  @relation(fields: [cotacao_id], references: [id], onDelete: SetNull)
+  
+  criado_por_id   String
+  criado_por      Usuario   @relation("ChamadosCriados", fields: [criado_por_id], references: [id])
+  
+  responsavel_id  String?
+  responsavel     Usuario?  @relation("ChamadosAtribuidos", fields: [responsavel_id], references: [id], onDelete: SetNull)
+  
+  solucao         String?   @default("")
+  resolvido_em    DateTime?
+  
+  criado_em       DateTime  @default(now())
+  atualizado_em   DateTime  @updatedAt
+
+  @@map("chamados_suporte")
+}
+
+model FinancialAuditLog {
+  id            String   @id @default(uuid())
+  usuario_id    String?
+  usuario       Usuario? @relation(fields: [usuario_id], references: [id], onDelete: SetNull)
+  entidade      String
+  entidade_id   String
+  acao          String
+  detalhes_json String   @default("{}")
+  ip_origem     String?  @default("")
+  criado_em     DateTime @default(now())
+
+  @@map("financial_audit_logs")
+}
+
+// -------------------------------------------------------------
+// LEGACY COMPATIBILITY TABLE
+// -------------------------------------------------------------
+model TransacaoFinanceira {
+  id               String    @id @default(uuid())
+  descricao        String
+  tipo             String    // RECEITA | DESPESA
+  categoria        String
+  valor_brl        Float
+  moeda_original   String    @default("BRL")
+  valor_original   Float
+  cotacao_cambio   Float     @default(1.0)
+  status           String    @default("PENDENTE")
+  data_vencimento  DateTime
+  data_pagamento   DateTime?
+  metodo_pagamento String    @default("PIX")
+  comprovante_ref  String?   @default("")
+  observacoes      String?   @default("")
+
+  cotacao_id       String?
+  cotacao          Cotacao?  @relation(fields: [cotacao_id], references: [id], onDelete: SetNull)
+
+  usuario_id       String
+  usuario          Usuario   @relation(fields: [usuario_id], references: [id])
+
+  criado_em        DateTime  @default(now())
+  atualizado_em    DateTime  @updatedAt
+
+  @@map("transacoes_financeiras")
+}
