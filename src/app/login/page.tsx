@@ -7,9 +7,7 @@ import FixLogo, { FixIcon } from "@/components/FixLogo";
 import {
   Lock,
   Mail,
-  User,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
   Sparkles,
   CheckCircle2,
@@ -18,8 +16,6 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isRegister, setIsRegister] = useState(false);
-  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,14 +26,11 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
-    const payload = isRegister ? { nome, email, senha } : { email, senha };
-
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email, senha }),
       });
 
       const data = await res.json();
@@ -54,13 +47,6 @@ export default function LoginPage() {
       setError("Falha na conexão com o servidor.");
       setLoading(false);
     }
-  }
-
-  function handleFillDemo() {
-    setEmail("agente@fixturismo.com.br");
-    setSenha("senha123");
-    setIsRegister(false);
-    setError(null);
   }
 
   return (
@@ -133,12 +119,10 @@ export default function LoginPage() {
               Área Restrita
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {isRegister ? "Criar conta de consultor" : "Acesse sua conta"}
+              Acesse sua conta
             </h2>
             <p className="mt-1.5 text-sm text-slate-600">
-              {isRegister
-                ? "Preencha seus dados para acessar o painel de cotações."
-                : "Digite suas credenciais corporativas para continuar."}
+              Digite suas credenciais corporativas para continuar.
             </p>
           </div>
 
@@ -152,27 +136,6 @@ export default function LoginPage() {
 
           {/* Formulário */}
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {isRegister && (
-              <div>
-                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
-                  Nome Completo *
-                </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                    <User className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    placeholder="Ex: Ana Silva"
-                    className="block w-full rounded-xl border-2 border-slate-200 bg-slate-50/50 pl-10 pr-3.5 py-3 text-sm font-semibold text-slate-900 placeholder-slate-400 transition-all focus:border-brand-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-900/10"
-                  />
-                </div>
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
                 E-mail Corporativo *
@@ -219,10 +182,6 @@ export default function LoginPage() {
             >
               {loading ? (
                 "Validando credenciais..."
-              ) : isRegister ? (
-                <>
-                  Criar Conta de Consultor <ArrowRight className="h-4 w-4 text-gold-400" />
-                </>
               ) : (
                 <>
                   Entrar no Sistema <ArrowRight className="h-4 w-4 text-gold-400" />
@@ -230,34 +189,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Alternar modo Login / Cadastro */}
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setError(null);
-              }}
-              className="text-xs font-bold text-brand-900 hover:text-gold-600 hover:underline transition-colors cursor-pointer"
-            >
-              {isRegister
-                ? "Já possui uma conta? Faça login aqui"
-                : "Novo consultor na equipe? Cadastre-se aqui"}
-            </button>
-          </div>
-
-          {/* Atalho Demo */}
-          <div className="pt-2 border-t border-slate-100 text-center">
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-brand-900 bg-slate-100 hover:bg-gold-50 hover:border-gold-300 border border-slate-200 px-4 py-2 rounded-xl transition-all cursor-pointer"
-            >
-              <ShieldCheck className="h-4 w-4 text-gold-600" />
-              Preencher com Usuário Demonstração
-            </button>
-          </div>
         </div>
       </div>
     </div>
