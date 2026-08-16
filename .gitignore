@@ -30,6 +30,9 @@ coverage/
 .env.test.local
 .env.production.local
 !.env.example
+*.pem
+*.key
+*.crt
 
 # 🗄️ Local SQLite Databases & WAL/Journals
 *.db
@@ -46,19 +49,27 @@ prisma/dev.db
 prisma/prod.db
 prisma/test.db
 
-# 📤 User Uploads & Media
+# 📤 User Uploads, Media & Deploy Packages
 public/uploads/*
 !public/uploads/.gitkeep
 uploads/
 *.ofx.tmp
+*.zip
+*.tar.gz
+*.rar
+*.7z
+myreserve-deploy.zip
 
-# 📝 Debug Logs
+# 📝 Debug Logs & Process PIDs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 *.log
+*.pid
+*.seed
+*.pid.lock
 
 # 💻 Operating System Files
 .DS_Store
@@ -71,13 +82,15 @@ Thumbs.db
 [Tt]humbs.db
 desktop.ini
 
-# 🛠️ IDE & Editor Settings
+# 🛠️ IDE, Agent & Editor Settings
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .idea/
+.cursor/
+.claude/
 *.suo
 *.ntvs*
 *.njsproj
