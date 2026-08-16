@@ -2,17 +2,20 @@
 # FIXTUR PROPOSAL & HOTEL QUOTE ENGINE — .gitignore
 # ==============================================================================
 
-# 📦 Dependencies
+# 📦 Dependencies & Package Managers
 node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+package-lock.json.bak
 
 # 🚀 Next.js & Build Outputs
 .next/
 /out/
 /build
 /dist
+.turbo/
+.vercel/
 tsconfig.tsbuildinfo
 next-env.d.ts.bak
 
@@ -29,6 +32,8 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging
+.env.stage
 !.env.example
 *.pem
 *.key
@@ -91,6 +96,9 @@ desktop.ini
 .idea/
 .cursor/
 .claude/
+.gemini/
+.windsurf/
+.zed/
 *.suo
 *.ntvs*
 *.njsproj
