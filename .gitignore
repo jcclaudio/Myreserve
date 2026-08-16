@@ -25,8 +25,7 @@ coverage/
 *.lcov
 .vitest/
 
-# 🔐 Environment Variables & Secrets (Always commit .env.example)
-.env
+# 🔐 Environment Variables & Secrets (Default .env tracked for server bootstrap)
 .env*.local
 .env.local
 .env.development.local
@@ -34,6 +33,7 @@ coverage/
 .env.production.local
 .env.staging
 .env.stage
+!.env
 !.env.example
 *.pem
 *.key
