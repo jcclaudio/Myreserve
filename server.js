@@ -6,6 +6,24 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
+// Função auxiliar para copiar pastas recursivamente
+function copyFolderSync(from, to) {
+  if (!fs.existsSync(from)) return;
+  if (!fs.existsSync(to)) {
+    fs.mkdirSync(to, { recursive: true });
+  }
+  const elements = fs.readdirSync(from);
+  for (const element of elements) {
+    const fromPath = path.join(from, element);
+    const toPath = path.join(to, element);
+    if (fs.lstatSync(fromPath).isDirectory()) {
+      copyFolderSync(fromPath, toPath);
+    } else {
+      fs.copyFileSync(fromPath, toPath);
+    }
+  }
+}
+
 // 1. Sanitização e Validação Robusta do DATABASE_URL para SQLite (Garante protocolo "file:")
 let dbUrl = process.env.DATABASE_URL || 'file:./dev.db';
 if (
@@ -14,7 +32,6 @@ if (
   !dbUrl.startsWith('postgres://') &&
   !dbUrl.startsWith('mysql://')
 ) {
-  // Se o painel forneceu apenas um caminho como "./dev.db" ou "/home/...", adiciona "file:"
   dbUrl = `file:${dbUrl}`;
 }
 process.env.DATABASE_URL = dbUrl;
@@ -70,6 +87,20 @@ function ensureProductionBuild() {
     }
   } else {
     console.log('[FixTur] Build de produção já existente (.next/BUILD_ID verificado). Pulando etapa de build.');
+  }
+
+  // 4.1 Sincronização obrigatória de arquivos estáticos para o modo Standalone do Next.js
+  const standaloneDir = path.join(__dirname, '.next', 'standalone');
+  if (fs.existsSync(standaloneDir)) {
+    console.log('[FixTur] Sincronizando arquivos estáticos (.next/static e public) para o servidor Standalone...');
+    const staticSrc = path.join(__dirname, '.next', 'static');
+    const staticDest = path.join(standaloneDir, '.next', 'static');
+    copyFolderSync(staticSrc, staticDest);
+
+    const publicSrc = path.join(__dirname, 'public');
+    const publicDest = path.join(standaloneDir, 'public');
+    copyFolderSync(publicSrc, publicDest);
+    console.log('[FixTur] Arquivos estáticos sincronizados com sucesso.');
   }
 }
 
