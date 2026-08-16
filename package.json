@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "prebuild": "node -e \"const fs=require('fs');if(!fs.existsSync('.env'))fs.writeFileSync('.env','DATABASE_URL=\\\"file:./dev.db\\\"\\nJWT_SECRET=\\\"fixtur-jwt-secret-key-2026\\\"\\nNODE_ENV=production\\nPORT=3000\\n');\"",
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
+    "build": "npm run prebuild && prisma generate && next build",
+    "start": "node server.js",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
+    "prisma:generate": "npm run prebuild && prisma generate",
+    "prisma:push": "npm run prebuild && prisma db push",
     "prisma:seed": "node prisma/seed.js",
-    "setup": "prisma generate && prisma db push && node prisma/seed.js",
+    "setup": "npm run prebuild && prisma generate && prisma db push && node prisma/seed.js",
     "deploy:integrator": "bash deploy-integrator.sh"
   },
   "dependencies": {
