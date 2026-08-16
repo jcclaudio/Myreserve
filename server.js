@@ -6,32 +6,42 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-// 1. Configuração de ambiente
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+// 1. Sanitização e Validação Robusta do DATABASE_URL para SQLite (Garante protocolo "file:")
+let dbUrl = process.env.DATABASE_URL || 'file:./dev.db';
+if (
+  !dbUrl.startsWith('file:') &&
+  !dbUrl.startsWith('postgresql://') &&
+  !dbUrl.startsWith('postgres://') &&
+  !dbUrl.startsWith('mysql://')
+) {
+  // Se o painel forneceu apenas um caminho como "./dev.db" ou "/home/...", adiciona "file:"
+  dbUrl = `file:${dbUrl}`;
+}
+process.env.DATABASE_URL = dbUrl;
+
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'myreserve-secret-token-key-travel-agency-2026';
 process.env.NODE_ENV = 'production';
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOSTNAME = '0.0.0.0';
 
-console.log('[FixTur] Inicializando ambiente em produção...');
+console.log(`[FixTur] Inicializando ambiente em produção...`);
+console.log(`[FixTur] DATABASE_URL configurada: ${process.env.DATABASE_URL}`);
 
-// 2. Garantir que o arquivo .env existe para o Prisma CLI
+// 2. Garantir que o arquivo .env existe e contém o formato com "file:"
 const envPath = path.join(__dirname, '.env');
-if (!fs.existsSync(envPath)) {
-  try {
-    fs.writeFileSync(
-      envPath,
-      `DATABASE_URL="${process.env.DATABASE_URL}"\nJWT_SECRET="${process.env.JWT_SECRET}"\nNODE_ENV=production\nPORT=${PORT}\n`
-    );
-    console.log('[FixTur] Arquivo .env gerado com sucesso.');
-  } catch (err) {
-    console.warn('[FixTur] Aviso ao criar .env:', err.message);
-  }
+try {
+  fs.writeFileSync(
+    envPath,
+    `DATABASE_URL="${process.env.DATABASE_URL}"\nJWT_SECRET="${process.env.JWT_SECRET}"\nNODE_ENV=production\nPORT=${PORT}\n`
+  );
+  console.log('[FixTur] Arquivo .env sincronizado com protocolo file: válido.');
+} catch (err) {
+  console.warn('[FixTur] Aviso ao sincronizar .env:', err.message);
 }
 
 // 3. Garantir Prisma Client e Banco de Dados SQLite
 try {
-  console.log('[FixTur] Verificando Prisma Client e Banco de Dados...');
+  console.log('[FixTur] Verificando Prisma Client e Banco de Dados SQLite...');
   execSync('npx prisma generate', { stdio: 'inherit' });
   execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
   if (fs.existsSync(path.join(__dirname, 'prisma', 'seed.js'))) {

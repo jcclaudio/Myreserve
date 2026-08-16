@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "prebuild": "node -e \"const fs=require('fs');if(!fs.existsSync('.env'))fs.writeFileSync('.env','DATABASE_URL=\\\"file:./dev.db\\\"\\nJWT_SECRET=\\\"fixtur-jwt-secret-key-2026\\\"\\nNODE_ENV=production\\nPORT=3000\\n');\"",
+    "prebuild": "node -e \"const fs=require('fs');let url=process.env.DATABASE_URL||'file:./dev.db';if(!url.startsWith('file:')&&!url.startsWith('postgres')&&!url.startsWith('mysql'))url='file:'+url;process.env.DATABASE_URL=url;try{fs.writeFileSync('.env',`DATABASE_URL=\\\"${url}\\\"\\nJWT_SECRET=\\\"${process.env.JWT_SECRET||'fixtur-jwt-secret-key-2026'}\\\"\\nNODE_ENV=production\\nPORT=3000\\n`);}catch(e){}\"",
     "dev": "next dev",
     "build": "npm run prebuild && prisma generate && next build",
     "start": "node server.js",
