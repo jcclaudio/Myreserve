@@ -1,13 +1,13 @@
 # ✈️ FixTur / MyReserve — Sistema Operacional de Viagens, Propostas & Finanças 2.0
 
-> **Plataforma corporativa integrada de Travel Tech:** Travel Quote Builder multiproduto, emissor de propostas comerciais de alto padrão (PDF A4 com suporte a prints/fotos), gestão financeira canônica (Subledger, Contas a Receber com Aging, Contas a Pagar, DRE), conciliação bancária OFX, painel de comissões do consultor (`/meu-financeiro`) e central de suporte operacional (ITSM/SLA).
+> **Plataforma corporativa integrada de Travel Tech:** Travel Quote Builder multiproduto, emissor de propostas comerciais de alto padrão (PDF A4 com suporte a prints/fotos e layout *Midnight Luxury*), gestão financeira canônica (Subledger, Contas a Receber com Aging, Contas a Pagar, DRE), conciliação bancária OFX, painel de comissões do consultor (`/meu-financeiro`), suporte operacional (ITSM/SLA) e deploy automatizado para VPS (Integrator / cPanel / Linux).
 
 ---
 
 ## 🚀 Como Executar Localmente
 
 ### 1. Pré-requisitos
-- Node.js 18+ instalado.
+- Node.js 18+ ou 20+ instalado.
 
 ### 2. Instalação e Inicialização
 No diretório do projeto, execute:
@@ -32,6 +32,40 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 
 ---
 
+## 🌐 Deploy em Produção (VPS Integrator / cPanel / Linux)
+
+O projeto está 100% configurado de acordo com a documentação oficial da **Wiki Integrator** com suporte a modo `output: 'standalone'` e gerenciador de processos PM2.
+
+### Método Automatizado 1: Via Painel Integrator Node.js / cPanel
+1. **Gerar Pacote de Deploy (no seu Windows):**
+   ```powershell
+   .\gerar-pacote-integrator.ps1
+   ```
+   *(Gera o arquivo limpo `myreserve-deploy.zip` na raiz do projeto)*.
+2. **Upload no Painel:** Acesse o painel da sua VPS (`https://vps10102.panel.icontainer.net:2090/`), abra **Integrator Node.js**, vá na aba **Deploy** e envie o `.zip`.
+3. **Registrar Aplicação:**
+   - **Node.js:** `20.x` ou `18.x`
+   - **Index:** `server.js`
+   - **Caminho:** `applications/myreserve`
+   - **Modo:** `Produção`
+4. **Executar Script no Terminal do Painel:**
+   ```bash
+   cd applications/myreserve
+   bash deploy-integrator.sh
+   pm2 start app.yaml
+   ```
+
+### Método Automatizado 2: Via Terminal SSH
+```bash
+ssh usuario@vps10102.panel.icontainer.net
+cd applications/myreserve
+bash deploy-integrator.sh
+pm2 start app.yaml
+pm2 save
+```
+
+---
+
 ## 🌟 Principais Módulos & Funcionalidades
 
 ### 1. Travel Quote Builder Multiproduto (`/cotacoes/nova` e `/cotacoes/[id]`)
@@ -44,7 +78,7 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 - **Reabertura com Versionamento:** Reabertura para correções com justificativa obrigatória e snapshot JSON imutável em `CotacaoVersao`.
 
 ### 2. Proposal Engine 2.0 (Proposta Comercial & PDF) (`/cotacoes/[id]/proposta`)
-- **Design Editorial Premium:** Layout responsivo, tipografia institucional FixTur e marca-d'água oficial de baixa opacidade.
+- **Design Editorial Premium & Resumo da Viagem em Linhas:** Cabeçalho executivo noturno (*Midnight Luxury*) distribuído horizontalmente em 2 linhas espaçosas, com ícones dourados em pílula, datas completas e tag de diárias.
 - **Hierarquia Visual Padronizada:** Exibição ordenada (Aéreo ➔ Hospedagem ➔ Locação de Veículos ➔ Parques ➔ Seguro ➔ Ingressos ➔ Transfers ➔ Passeios).
 - **Suporte Total a Imagens Base64 e Uploads:** Exibição nítida de prints de voos, fotos de veículos e vouchers tanto na tela quanto na exportação para PDF (`window.print()`).
 - **Paginação A4 Inteligente (Anti-Orphan):** Regras CSS `@media print` e classes `.proposal-section-block` e `break-after-avoid` que impedem títulos de seções de ficarem isolados no rodapé das páginas.
@@ -115,9 +149,10 @@ npm test
 
 ## 🛠️ Stack Tecnológica
 
-- **Frontend & Backend:** Next.js 14+ (App Router) + TypeScript + React
+- **Frontend & Backend:** Next.js 14+ (App Router, Standalone mode) + TypeScript + React
 - **Estilização & PDF:** Tailwind CSS + Lucide React + CSS `@media print` A4
-- **Banco de Dados & ORM:** Prisma ORM com SQLite (local) / PostgreSQL (produção)
+- **Banco de Dados & ORM:** Prisma ORM com SQLite (local) / PostgreSQL / MySQL (produção)
 - **Autenticação:** JWT seguro em cookies HTTP-only via `jose` e hashing com `bcryptjs`
 - **Validação de Contratos:** Zod
+- **Gerenciador de Processos:** PM2 (`app.yaml` / `server.js`)
 - **Testes:** Vitest
