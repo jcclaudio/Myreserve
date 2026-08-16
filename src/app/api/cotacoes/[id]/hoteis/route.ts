@@ -101,7 +101,7 @@ export async function POST(
             maior_venda_do_grupo: c.maior_venda_do_grupo,
           })),
         },
-      },
+      } as any,
       include: { canais: true },
     });
 
