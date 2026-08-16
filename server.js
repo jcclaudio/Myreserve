@@ -1,63 +1,81 @@
 // ==============================================================================
-// SERVER.JS — INICIALIZADOR UNIVERSAL COMPATÍVEL COM PAINEL INTEGRATOR NODE.JS
+// SERVER.JS — INICIALIZADOR AUTÔNOMO UNIVERSAL PARA NEXT.JS & ICP INTEGRATOR
 // ==============================================================================
-const path = require('path');
+const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
+const http = require('http');
 
-// Garantir variáveis padrão caso não tenham sido injetadas no ambiente
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:./dev.db";
-}
-if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = "fixtur-secret-super-secure-jwt-key-2026";
-}
-if (!process.env.NODE_ENV) {
-  process.env.NODE_ENV = "production";
-}
-process.env.PORT = process.env.PORT || '3000';
-process.env.HOSTNAME = process.env.HOSTNAME || '0.0.0.0';
+// 1. Configuração de ambiente
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'myreserve-secret-token-key-travel-agency-2026';
+process.env.NODE_ENV = 'production';
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOSTNAME = '0.0.0.0';
 
-// Se o arquivo .env não existir fisicamente, cria um para o Prisma CLI
+console.log('[FixTur] Inicializando ambiente em produção...');
+
+// 2. Garantir que o arquivo .env existe para o Prisma CLI
 const envPath = path.join(__dirname, '.env');
 if (!fs.existsSync(envPath)) {
   try {
     fs.writeFileSync(
       envPath,
-      `DATABASE_URL="${process.env.DATABASE_URL}"\nJWT_SECRET="${process.env.JWT_SECRET}"\nNODE_ENV=production\nPORT=${process.env.PORT}\n`
+      `DATABASE_URL="${process.env.DATABASE_URL}"\nJWT_SECRET="${process.env.JWT_SECRET}"\nNODE_ENV=production\nPORT=${PORT}\n`
     );
-  } catch (e) {
-    // Silently ignore if read-only
+    console.log('[FixTur] Arquivo .env gerado com sucesso.');
+  } catch (err) {
+    console.warn('[FixTur] Aviso ao criar .env:', err.message);
   }
 }
 
-const standaloneServer = path.join(__dirname, '.next', 'standalone', 'server.js');
-
-if (fs.existsSync(standaloneServer)) {
-  // Execução direta do standalone otimizado gerado pelo Next.js
-  require(standaloneServer);
-} else {
-  // Fallback padrão Next.js
-  const { createServer } = require('http');
-  const next = require('next');
-
-  const dev = process.env.NODE_ENV !== 'production';
-  const hostname = process.env.HOSTNAME;
-  const port = parseInt(process.env.PORT, 10);
-
-  const app = next({ dev, hostname, port });
-  const handle = app.getRequestHandler();
-
-  app.prepare().then(() => {
-    createServer(async (req, res) => {
-      try {
-        await handle(req, res);
-      } catch (err) {
-        console.error('[FixTur] Erro na requisição:', err);
-        res.statusCode = 500;
-        res.end('Erro interno do servidor');
-      }
-    }).listen(port, hostname, () => {
-      console.log(`[FixTur] Servidor rodando em http://${hostname}:${port}`);
-    });
-  });
+// 3. Garantir Prisma Client e Banco de Dados SQLite
+try {
+  console.log('[FixTur] Verificando Prisma Client e Banco de Dados...');
+  execSync('npx prisma generate', { stdio: 'inherit' });
+  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+  if (fs.existsSync(path.join(__dirname, 'prisma', 'seed.js'))) {
+    try {
+      execSync('node prisma/seed.js', { stdio: 'inherit' });
+    } catch (e) {
+      // Ignora se os dados já existirem
+    }
+  }
+} catch (err) {
+  console.warn('[FixTur] Aviso na inicialização do Prisma:', err.message);
 }
+
+// 4. Se a compilação .next não existir, compila automaticamente
+const nextDir = path.join(__dirname, '.next');
+if (!fs.existsSync(nextDir)) {
+  console.log('[FixTur] Compilação .next não encontrada. Executando build de produção agora...');
+  try {
+    execSync('npx next build', { stdio: 'inherit' });
+  } catch (err) {
+    console.error('[FixTur] Erro no build do Next.js:', err.message);
+  }
+}
+
+// 5. Iniciar Servidor Web
+console.log(`[FixTur] Iniciando Next.js em http://${HOSTNAME}:${PORT}...`);
+const next = require('next');
+const app = next({ dev: false, hostname: HOSTNAME, port: PORT });
+const handle = app.getRequestHandler();
+
+app
+  .prepare()
+  .then(() => {
+    http
+      .createServer((req, res) => {
+        handle(req, res);
+      })
+      .listen(PORT, HOSTNAME, () => {
+        console.log(`=======================================================`);
+        console.log(`🚀 FixTur / MyReserve ONLINE com sucesso na porta ${PORT}!`);
+        console.log(`=======================================================`);
+      });
+  })
+  .catch((err) => {
+    console.error('[FixTur] Erro fatal ao iniciar o servidor:', err);
+    process.exit(1);
+  });
