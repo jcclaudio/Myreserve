@@ -60,7 +60,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<string>
   const cookieStore = cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false, // Permite funcionamento tanto em HTTP (IP direto da VPS) quanto em HTTPS
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 dias

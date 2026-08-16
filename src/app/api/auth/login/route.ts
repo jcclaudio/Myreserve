@@ -17,9 +17,24 @@ export async function POST(request: Request) {
 
     const { email, senha } = parsed.data;
 
-    const usuario = await prisma.usuario.findUnique({
+    let usuario = await prisma.usuario.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
+
+    // Auto-bootstrap do usuário demo caso o banco em produção não tenha rodado o seed
+    if (!usuario && email.toLowerCase().trim() === "agente@myreserve.com.br" && senha === "senha123") {
+      const { hashPassword } = await import("@/lib/auth");
+      const senha_hash = await hashPassword("senha123");
+      usuario = await prisma.usuario.create({
+        data: {
+          nome: "Agente Demo FixTur",
+          email: "agente@myreserve.com.br",
+          senha_hash,
+          role: "ADMIN",
+          ativo: true,
+        },
+      });
+    }
 
     if (!usuario) {
       return NextResponse.json(
