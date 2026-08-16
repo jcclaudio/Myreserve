@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "prebuild": "node -e \"const fs=require('fs');let url=process.env.DATABASE_URL||'file:./dev.db';if(!url.startsWith('file:')&&!url.startsWith('postgres')&&!url.startsWith('mysql'))url='file:'+url;process.env.DATABASE_URL=url;try{fs.writeFileSync('.env',`DATABASE_URL=\\\"${url}\\\"\\nJWT_SECRET=\\\"${process.env.JWT_SECRET||'fixtur-jwt-secret-key-2026'}\\\"\\nNODE_ENV=production\\nPORT=3000\\n`);}catch(e){}\"",
     "dev": "next dev",
-    "build": "npm run prebuild && prisma generate && next build",
+    "build": "next build",
     "start": "node server.js",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prisma:generate": "npm run prebuild && prisma generate",
-    "prisma:push": "npm run prebuild && prisma db push",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
-    "setup": "npm run prebuild && prisma generate && prisma db push && node prisma/seed.js",
+    "setup": "prisma generate && prisma db push && node prisma/seed.js",
     "deploy:integrator": "bash deploy-integrator.sh"
   },
   "dependencies": {

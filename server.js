@@ -42,11 +42,11 @@ try {
 // 3. Garantir Prisma Client e Banco de Dados SQLite
 try {
   console.log('[FixTur] Verificando Prisma Client e Banco de Dados SQLite...');
-  execSync('npx prisma generate', { stdio: 'inherit' });
-  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+  execSync('npx prisma generate', { stdio: 'inherit', cwd: __dirname });
+  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', cwd: __dirname });
   if (fs.existsSync(path.join(__dirname, 'prisma', 'seed.js'))) {
     try {
-      execSync('node prisma/seed.js', { stdio: 'inherit' });
+      execSync('node prisma/seed.js', { stdio: 'inherit', cwd: __dirname });
     } catch (e) {
       // Ignora se os dados já existirem
     }
@@ -55,37 +55,55 @@ try {
   console.warn('[FixTur] Aviso na inicialização do Prisma:', err.message);
 }
 
-// 4. Se a compilação .next não existir, compila automaticamente
-const nextDir = path.join(__dirname, '.next');
-if (!fs.existsSync(nextDir)) {
-  console.log('[FixTur] Compilação .next não encontrada. Executando build de produção agora...');
-  try {
-    execSync('npx next build', { stdio: 'inherit' });
-  } catch (err) {
-    console.error('[FixTur] Erro no build do Next.js:', err.message);
+// 4. Verificação robusta de build de produção (.next/BUILD_ID)
+function ensureProductionBuild() {
+  const buildIdPath = path.join(__dirname, '.next', 'BUILD_ID');
+
+  if (!fs.existsSync(buildIdPath)) {
+    console.log('[FixTur] Build de produção não encontrado (.next/BUILD_ID ausente). Executando "npx next build"...');
+    try {
+      execSync('npx next build', { stdio: 'inherit', cwd: __dirname });
+      console.log('[FixTur] Build de produção concluído com sucesso.');
+    } catch (err) {
+      console.error('[FixTur] Erro fatal ao executar o build de produção:', err);
+      process.exit(1);
+    }
+  } else {
+    console.log('[FixTur] Build de produção já existente (.next/BUILD_ID verificado). Pulando etapa de build.');
   }
 }
 
-// 5. Iniciar Servidor Web
-console.log(`[FixTur] Iniciando Next.js em http://${HOSTNAME}:${PORT}...`);
-const next = require('next');
-const app = next({ dev: false, hostname: HOSTNAME, port: PORT });
-const handle = app.getRequestHandler();
+ensureProductionBuild();
 
-app
-  .prepare()
-  .then(() => {
-    http
-      .createServer((req, res) => {
-        handle(req, res);
-      })
-      .listen(PORT, HOSTNAME, () => {
-        console.log(`=======================================================`);
-        console.log(`🚀 FixTur / MyReserve ONLINE com sucesso na porta ${PORT}!`);
-        console.log(`=======================================================`);
-      });
-  })
-  .catch((err) => {
-    console.error('[FixTur] Erro fatal ao iniciar o servidor:', err);
-    process.exit(1);
-  });
+// 5. Iniciar Servidor Web Next.js
+console.log(`[FixTur] Iniciando Next.js em http://${HOSTNAME}:${PORT}...`);
+
+const standalonePath = path.join(__dirname, '.next', 'standalone', 'server.js');
+if (fs.existsSync(standalonePath)) {
+  console.log(`=======================================================`);
+  console.log(`🚀 FixTur / MyReserve ONLINE em modo Standalone na porta ${PORT}!`);
+  console.log(`=======================================================`);
+  require(standalonePath);
+} else {
+  const next = require('next');
+  const app = next({ dev: false, hostname: HOSTNAME, port: PORT });
+  const handle = app.getRequestHandler();
+
+  app
+    .prepare()
+    .then(() => {
+      http
+        .createServer((req, res) => {
+          handle(req, res);
+        })
+        .listen(PORT, HOSTNAME, () => {
+          console.log(`=======================================================`);
+          console.log(`🚀 FixTur / MyReserve ONLINE com sucesso na porta ${PORT}!`);
+          console.log(`=======================================================`);
+        });
+    })
+    .catch((err) => {
+      console.error('[FixTur] Erro fatal ao iniciar o servidor:', err);
+      process.exit(1);
+    });
+}
