@@ -72,6 +72,30 @@ try {
   console.warn('[FixTur] Aviso na inicialização do Prisma:', err.message);
 }
 
+// 3.1 Sincronizar o Prisma Client recém-gerado (engine nativo desta plataforma) para dentro
+// do bundle Standalone. O build do Next.js pode ter sido empacotado em outro SO (ex: Windows),
+// deixando ali um query engine incompatível com o Linux da VPS — isso quebra toda chamada ao
+// banco (ex: 500 no login) mesmo com o Prisma Client da raiz já correto.
+try {
+  const standaloneNodeModules = path.join(__dirname, '.next', 'standalone', 'node_modules');
+  if (fs.existsSync(standaloneNodeModules)) {
+    console.log('[FixTur] Sincronizando Prisma Client nativo para o bundle Standalone...');
+    fs.rmSync(path.join(standaloneNodeModules, '.prisma'), { recursive: true, force: true });
+    fs.rmSync(path.join(standaloneNodeModules, '@prisma', 'client'), { recursive: true, force: true });
+    copyFolderSync(
+      path.join(__dirname, 'node_modules', '.prisma'),
+      path.join(standaloneNodeModules, '.prisma')
+    );
+    copyFolderSync(
+      path.join(__dirname, 'node_modules', '@prisma', 'client'),
+      path.join(standaloneNodeModules, '@prisma', 'client')
+    );
+    console.log('[FixTur] Prisma Client do Standalone sincronizado com sucesso.');
+  }
+} catch (err) {
+  console.warn('[FixTur] Aviso ao sincronizar Prisma Client do Standalone:', err.message);
+}
+
 // 4. Verificação robusta de build de produção (.next/BUILD_ID)
 function ensureProductionBuild() {
   const buildIdPath = path.join(__dirname, '.next', 'BUILD_ID');
