@@ -18,6 +18,7 @@ NODE_ENV=production
 PORT=3000
 DATABASE_URL=file:/app/data/myreserve.db
 JWT_SECRET=<segredo-aleatorio-com-ao-menos-32-caracteres>
+COOKIE_SECURE=true
 SEED_ADMIN_EMAIL=<email-do-administrador-inicial>
 SEED_ADMIN_PASSWORD=<senha-forte-inicial>
 ```
@@ -27,6 +28,23 @@ invalida as sessões assinadas com o segredo anterior.
 
 Depois do primeiro seed bem-sucedido, `SEED_ADMIN_PASSWORD` pode ser removida do ambiente:
 reinícios futuros preservam o usuário e não redefinem sua senha.
+
+Para testar temporariamente pelo endereço IP em HTTP, defina `COOKIE_SECURE=false` no painel e
+reinicie a aplicação. Volte imediatamente para `COOKIE_SECURE=true` após configurar um domínio
+com HTTPS.
+
+## Redefinição de senha administrativa
+
+O seed não altera senhas existentes. Para redefinir uma senha administrativa, defina
+temporariamente `RESET_ADMIN_EMAIL` e `RESET_ADMIN_PASSWORD` (mínimo 12 caracteres) no ambiente
+do container e execute:
+
+```bash
+npm run admin:reset-password
+```
+
+O comando só altera um usuário ativo com papel `ADMIN`, não imprime o e-mail nem a senha e deve
+ser seguido da remoção das duas variáveis do ambiente.
 
 ## Procedimento de deploy
 

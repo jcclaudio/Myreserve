@@ -13,6 +13,7 @@
     "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
     "setup": "node scripts/prepare-database.js",
+    "admin:reset-password": "node scripts/reset-admin-password.js",
     "deploy:integrator": "bash deploy-integrator.sh"
   },
   "dependencies": {
