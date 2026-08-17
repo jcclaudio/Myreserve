@@ -12,7 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
-    "setup": "prisma generate && prisma db push && node prisma/seed.js",
+    "setup": "node scripts/prepare-database.js",
     "deploy:integrator": "bash deploy-integrator.sh"
   },
   "dependencies": {

@@ -17,24 +17,9 @@ export async function POST(request: Request) {
 
     const { email, senha } = parsed.data;
 
-    let usuario = await prisma.usuario.findUnique({
+    const usuario = await prisma.usuario.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
-
-    // Auto-bootstrap do usuário demo caso o banco em produção não tenha rodado o seed
-    if (!usuario && email.toLowerCase().trim() === "agente@myreserve.com.br" && senha === "senha123") {
-      const { hashPassword } = await import("@/lib/auth");
-      const senha_hash = await hashPassword("senha123");
-      usuario = await prisma.usuario.create({
-        data: {
-          nome: "Agente Demo FixTur",
-          email: "agente@myreserve.com.br",
-          senha_hash,
-          role: "ADMIN",
-          ativo: true,
-        },
-      });
-    }
 
     if (!usuario) {
       return NextResponse.json(
@@ -77,7 +62,10 @@ export async function POST(request: Request) {
       },
     });
   } catch (err) {
-    console.error("Erro no login:", err);
+    const code = typeof err === "object" && err !== null && "code" in err
+      ? (err as { code?: string }).code
+      : undefined;
+    console.error("[auth/login] Falha interna.", code ? { code } : {});
     return NextResponse.json(
       { error: "Erro interno no servidor ao processar o login." },
       { status: 500 }

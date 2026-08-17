@@ -3,9 +3,13 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "myreserve-secret-token-key-travel-agency-2026"
-);
+function getSecretKey() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("JWT_SECRET com ao menos 32 caracteres é obrigatório.");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 const COOKIE_NAME = "myreserve_session";
 
@@ -30,12 +34,12 @@ export async function createSessionToken(payload: SessionPayload): Promise<strin
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(SECRET_KEY);
+    .sign(getSecretKey());
 }
 
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, getSecretKey());
     return {
       userId: payload.userId as string,
       email: payload.email as string,
@@ -60,7 +64,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<string>
   const cookieStore = cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: false, // Permite funcionamento tanto em HTTP (IP direto da VPS) quanto em HTTPS
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 dias

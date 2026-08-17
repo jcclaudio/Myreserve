@@ -13,8 +13,8 @@
 No diretório do projeto, execute:
 
 ```bash
-# 1. Instalar as dependências
-npm install
+# 1. Instalar as dependências pelo lockfile
+npm ci
 
 # 2. Sincronizar o banco de dados e popular dados de demonstração
 npm run setup
@@ -25,16 +25,16 @@ npm run dev
 
 Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-### 3. Credenciais de Acesso de Demonstração
-- **Administrador / Diretor:** `admin@myreserve.com.br` / `admin123`
-- **Consultor / Agente:** `agente@myreserve.com.br` / `senha123`
-- **Financeiro:** `financeiro@myreserve.com.br` / `fin123`
+### 3. Primeiro acesso
+Defina `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD` no seu `.env` local antes do primeiro
+`npm run setup`. O seed cria o usuário inicial uma única vez e nunca altera uma senha já existente.
 
 ---
 
 ## 🌐 Deploy em Produção (VPS Integrator / cPanel / Linux)
 
-O projeto está 100% configurado de acordo com a documentação oficial da **Wiki Integrator** com suporte a modo `output: 'standalone'` e gerenciador de processos PM2.
+O modo `output: 'standalone'` usa um banco SQLite persistente externo ao bundle. Consulte
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) antes de publicar uma nova versão.
 
 ### Método Automatizado 1: Via Painel Integrator Node.js / cPanel
 1. **Gerar Pacote de Deploy (no seu Windows):**
@@ -151,7 +151,7 @@ npm test
 
 - **Frontend & Backend:** Next.js 14+ (App Router, Standalone mode) + TypeScript + React
 - **Estilização & PDF:** Tailwind CSS + Lucide React + CSS `@media print` A4
-- **Banco de Dados & ORM:** Prisma ORM com SQLite (local) / PostgreSQL / MySQL (produção)
+- **Banco de Dados & ORM:** Prisma ORM com SQLite (local e produção, em volume persistente)
 - **Autenticação:** JWT seguro em cookies HTTP-only via `jose` e hashing com `bcryptjs`
 - **Validação de Contratos:** Zod
 - **Gerenciador de Processos:** PM2 (`app.yaml` / `server.js`)

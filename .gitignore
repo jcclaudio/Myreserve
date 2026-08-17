@@ -25,15 +25,9 @@ coverage/
 *.lcov
 .vitest/
 
-# 🔐 Environment Variables & Secrets (Default .env tracked for server bootstrap)
-.env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.staging
-.env.stage
-!.env
+# 🔐 Environment Variables & Secrets
+.env
+.env.*
 !.env.example
 *.pem
 *.key

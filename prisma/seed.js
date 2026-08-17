@@ -6,19 +6,30 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
-  // Criar ou obter usuário padrão da agência
-  const senhaHash = await bcrypt.hash("senha123", 10);
-  const usuario = await prisma.usuario.upsert({
-    where: { email: "agente@myreserve.com.br" },
-    update: {},
-    create: {
-      nome: "Agente Demo MyReserve",
-      email: "agente@myreserve.com.br",
-      senha_hash: senhaHash,
-    },
-  });
+  const isProduction = process.env.NODE_ENV === "production";
+  const email = process.env.SEED_ADMIN_EMAIL || (!isProduction ? "agente@myreserve.com.br" : undefined);
+  if (!email) {
+    throw new Error("SEED_ADMIN_EMAIL é obrigatório para criar o primeiro usuário em produção.");
+  }
 
-  console.log("Usuário padrão pronto:", usuario.email);
+  // O seed nunca redefine a senha existente. A senha só é necessária no primeiro bootstrap.
+  let usuario = await prisma.usuario.findUnique({ where: { email: email.toLowerCase().trim() } });
+  if (!usuario) {
+    const password = process.env.SEED_ADMIN_PASSWORD;
+    if (typeof password !== "string" || password.length < 12) {
+      throw new Error("SEED_ADMIN_PASSWORD com ao menos 12 caracteres é obrigatório para criar o primeiro usuário.");
+    }
+    usuario = await prisma.usuario.create({
+      data: {
+        nome: process.env.SEED_ADMIN_NAME || "Administrador MyReserve",
+        email: email.toLowerCase().trim(),
+        senha_hash: await bcrypt.hash(password, 10),
+        role: "ADMIN",
+      },
+    });
+  }
+
+  console.log("Usuário inicial pronto.");
 
   // Criar cotação inicial baseada no Caso de Teste 1 do Prompt Mestre
   const cotacaoExistente = await prisma.cotacao.findFirst({

@@ -3,19 +3,17 @@
 # SCRIPT AUTOMATIZADO DE DEPLOY — INTEGRATOR VPS / NODE.JS
 # ==============================================================================
 
-set -e
+set -eu
 
 echo "🚀 [1/5] Iniciando Deploy do FixTur / MyReserve..."
 
 # 1. Dependências
 echo "📦 [2/5] Instalando dependências com npm..."
-npm install
+npm ci
 
 # 2. Banco de Dados Prisma
 echo "🗄️ [3/5] Gerando cliente Prisma e sincronizando schema..."
-npx prisma generate
-npx prisma db push
-node prisma/seed.js || true
+node scripts/prepare-database.js
 
 # 3. Compilação Next.js
 echo "🏗️ [4/5] Executando build de produção..."
