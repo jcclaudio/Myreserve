@@ -2,19 +2,32 @@ name: CI/CD Pipeline — FixTur MyReserve
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master ]
+    tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  test-and-build:
+  # -------------------------------------------------------------
+  # ETAPA 1: Testes Automatizados e Validação de Tipos / Build
+  # -------------------------------------------------------------
+  test-and-validate:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Código
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -26,12 +39,60 @@ jobs:
       - name: Gerar Prisma Client
         run: npx prisma generate
 
+      - name: Checagem Estática de Tipos (TypeScript)
+        run: npx tsc --noEmit
+
       - name: Executar Testes Automatizados (Vitest)
         run: npm test
 
-      - name: Build Next.js
+      - name: Testar Build Next.js
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
           DATABASE_URL: "file:./dev.db"
-          JWT_SECRET: "ci-test-jwt-secret-key-1234567890"
+          JWT_SECRET: "ci-test-jwt-secret-key-1234567890-min-32-chars"
+
+  # -------------------------------------------------------------
+  # ETAPA 2: Build da Imagem Docker e Publicação no GHCR
+  # (Executa automaticamente no push da branch principal)
+  # -------------------------------------------------------------
+  docker-publish:
+    needs: test-and-validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Autenticar no GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extrair Metadados do Docker (Tags & Labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: Construir e Publicar Imagem Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

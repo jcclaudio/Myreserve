@@ -48,6 +48,28 @@ ser seguido da remoção das duas variáveis do ambiente.
 
 ## Procedimento de deploy
 
+### Opção 1: Via Docker / Painel ICP Integrator (Recomendado)
+
+O repositório possui uma pipeline no GitHub Actions configurada para testar e publicar automaticamente uma imagem Docker no **GitHub Container Registry (GHCR)**: `ghcr.io/<seu-usuario>/<seu-repo>:latest`.
+
+#### Configuração no Painel ICP:
+1. **Imagem:** `ghcr.io/<seu-usuario>/myreserve:latest` (ou via compose com `docker-compose.prod.yml`).
+2. **Mapeamento de Portas:** Porta do Container `3000` -> Porta Host `3000` (ou porta desejada).
+3. **Volume Persistente (Obrigatório):** Mapear diretório ou volume do host para `/app/data`.
+4. **Variáveis de Ambiente:**
+   - `NODE_ENV=production`
+   - `PORT=3000`
+   - `DATABASE_URL=file:/app/data/myreserve.db`
+   - `JWT_SECRET=<segredo-aleatorio-32-chars>`
+   - `SEED_ADMIN_EMAIL=admin@seudominio.com.br`
+   - `SEED_ADMIN_PASSWORD=SuaSenhaForte123!`
+   - `COOKIE_SECURE=true` (ou `false` se testar em HTTP antes do SSL)
+   - `NEXT_PUBLIC_APP_URL=https://seudominio.com.br`
+
+---
+
+### Opção 2: Via Código Fonte / PM2 no Integrator
+
 1. Faça backup do arquivo SQLite persistente antes de alterar a aplicação.
 2. Envie somente o código e confirme que o volume que contém `/app/data` não será substituído.
 3. No diretório `/app`, execute `bash deploy-integrator.sh`.
@@ -64,3 +86,4 @@ aplicável até que uma baseline de migrations seja criada e validada separadame
 2. Restaure a versão anterior do código e reinicie o PM2 apontando para o mesmo `/app/data/myreserve.db`.
 3. Não remova o banco, o volume ou o diretório `data`.
 4. Se o schema da nova versão tiver sido alterado, restaure o backup do banco feito antes do deploy antes de religar a versão anterior.
+

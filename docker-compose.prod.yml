@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/${IMAGE_REPO:-jcclaudio/myreserve}:latest
     container_name: fixtur-myreserve-app
     restart: always
     ports:
