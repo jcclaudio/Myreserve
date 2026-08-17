@@ -1,19 +1,16 @@
 services:
   app:
-    image: ghcr.io/${IMAGE_REPO:-jcclaudio/myreserve}:latest
+    image: ghcr.io/jcclaudio/myreserve:latest
     container_name: fixtur-myreserve-app
     restart: always
     ports:
       - "3000:3000"
+    env_file:
+      - icontainer.env
     environment:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: file:/app/data/myreserve.db
-      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET fora do repositório}
-      COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
     volumes:
       - sqlite_data:/app/data
 

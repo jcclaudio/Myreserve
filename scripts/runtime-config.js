@@ -28,7 +28,12 @@ function loadEnvironmentFile(envFilePath) {
 }
 
 function loadRuntimeEnvironment(projectRoot) {
-  const candidates = [process.env.ENV_FILE, '/.env', path.join(projectRoot, '.env')].filter(Boolean);
+  const candidates = [
+    process.env.ENV_FILE,
+    '/.env',
+    path.join(projectRoot, 'icontainer.env'),
+    path.join(projectRoot, '.env'),
+  ].filter(Boolean);
   for (const candidate of candidates) {
     if (loadEnvironmentFile(candidate)) return candidate;
   }
