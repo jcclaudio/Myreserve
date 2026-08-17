@@ -30,6 +30,18 @@ if (!fs.existsSync(standalonePath)) {
   throw new Error('Bundle Standalone não encontrado após o build.');
 }
 
+function copyStandaloneAssets(source, destination) {
+  if (!fs.existsSync(source)) {
+    throw new Error(`Asset obrigatório ausente: ${path.relative(projectRoot, source)}`);
+  }
+  fs.mkdirSync(path.dirname(destination), { recursive: true });
+  fs.cpSync(source, destination, { recursive: true, force: true });
+}
+
+const standaloneDirectory = path.dirname(standalonePath);
+copyStandaloneAssets(path.join(projectRoot, 'public'), path.join(standaloneDirectory, 'public'));
+copyStandaloneAssets(path.join(projectRoot, '.next', 'static'), path.join(standaloneDirectory, '.next', 'static'));
+
 // O DATABASE_URL absoluto evita que o Prisma resolva o banco dentro do bundle Standalone.
-// Não copiamos o Prisma Client nem qualquer arquivo .db para o bundle.
+// Copiamos somente assets estáticos; Prisma Client e arquivos .db permanecem fora do bundle.
 require(standalonePath);
