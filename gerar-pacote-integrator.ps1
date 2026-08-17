@@ -5,7 +5,7 @@
 Write-Host "Iniciando criacao do pacote de deploy..." -ForegroundColor Cyan
 
 $sourceDir = (Get-Location).Path
-$zipPath = Join-Path (Get-Item $sourceDir).Parent.FullName "myreserve-deploy.zip"
+$zipPath = Join-Path $sourceDir "myreserve-deploy.zip"
 
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force
@@ -17,7 +17,7 @@ if (Test-Path $tempFolder) {
 }
 New-Item -ItemType Directory -Path $tempFolder | Out-Null
 
-$excludeDirs = @("node_modules", ".next", ".git", ".vitest", "coverage", "scratch", "tmp", "temp")
+$excludeDirs = @("node_modules", ".next", ".git", ".vitest", "coverage", "scratch", "tmp", "temp", "myreserve-deploy.zip")
 
 Get-ChildItem -Path $sourceDir | ForEach-Object {
     if ($excludeDirs -notcontains $_.Name) {
