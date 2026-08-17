@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    env: {
+      JWT_SECRET: "ci-test-jwt-secret-key-at-least-32-characters-long",
+      DATABASE_URL: "file:./dev.db",
+    },
   },
   resolve: {
     alias: {

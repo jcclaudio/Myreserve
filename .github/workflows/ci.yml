@@ -22,6 +22,10 @@ jobs:
   # -------------------------------------------------------------
   test-and-validate:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "file:./dev.db"
+      JWT_SECRET: "ci-test-jwt-secret-key-1234567890-min-32-chars"
+      NEXT_TELEMETRY_DISABLED: 1
 
     steps:
       - name: Checkout Código

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import {
   hashPassword,
   verifyPassword,
@@ -7,6 +7,10 @@ import {
 } from "../src/lib/auth";
 
 describe("Segurança, Autenticação e RBAC (Roles & Permissões)", () => {
+  beforeAll(() => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || "ci-test-jwt-secret-key-1234567890-min-32-chars";
+  });
+
   it("Gera hash seguro e verifica senha corretamente com bcrypt", async () => {
     const senhaPlana = "SenhaForte@2026";
     const hash = await hashPassword(senhaPlana);
