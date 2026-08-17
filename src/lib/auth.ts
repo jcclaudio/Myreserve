@@ -11,6 +11,14 @@ function getSecretKey() {
   return new TextEncoder().encode(secret);
 }
 
+function shouldUseSecureCookie() {
+  const configured = process.env.COOKIE_SECURE;
+  if (configured === undefined) return process.env.NODE_ENV === "production";
+  if (configured === "true") return true;
+  if (configured === "false") return false;
+  throw new Error("COOKIE_SECURE deve ser true ou false.");
+}
+
 const COOKIE_NAME = "myreserve_session";
 
 export interface SessionPayload {
@@ -64,7 +72,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<string>
   const cookieStore = cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie(),
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 dias
