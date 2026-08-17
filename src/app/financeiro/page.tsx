@@ -329,6 +329,73 @@ export default function FinanceiroPage() {
     }
   }
 
+  async function handleSalvarNovoLancamento(e: React.FormEvent) {
+    e.preventDefault();
+    setFormErrorNovo("");
+
+    if (!novaDescricao.trim()) {
+      setFormErrorNovo("A descrição do lançamento é obrigatória.");
+      return;
+    }
+    if (typeof novoValor !== "number" || novoValor <= 0) {
+      setFormErrorNovo("Informe um valor numérico válido maior que zero.");
+      return;
+    }
+    if (novaMoeda !== "BRL" && (!novoCambio || novoCambio <= 0)) {
+      setFormErrorNovo("Informe uma cotação de câmbio válida para a moeda estrangeira.");
+      return;
+    }
+    if (!novoVencimento) {
+      setFormErrorNovo("A data de vencimento é obrigatória.");
+      return;
+    }
+
+    setSalvandoNovo(true);
+    try {
+      const payload = {
+        descricao: novaDescricao.trim(),
+        tipo: novoTipo,
+        categoria: novaCategoria,
+        valor_original: Number(novoValor),
+        moeda_original: novaMoeda,
+        cotacao_cambio: novaMoeda === "BRL" ? 1.0 : Number(novoCambio),
+        status: novoStatus,
+        data_vencimento: novoVencimento,
+        data_pagamento: novoStatus === "PAGO" ? novoVencimento : null,
+        metodo_pagamento: novoMetodo,
+        comprovante_ref: novoComprovante.trim(),
+        observacoes: novasObs.trim(),
+        cotacao_id: novaCotacaoId ? novaCotacaoId : null,
+      };
+
+      const res = await fetch("/api/financeiro/transacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setFormErrorNovo(data.error || "Erro ao salvar transação financeira.");
+        return;
+      }
+
+      mostrarToast("Lançamento financeiro registrado com sucesso!");
+      setModalNovoAberto(false);
+      setNovaDescricao("");
+      setNovoValor("");
+      setNovoComprovante("");
+      setNovasObs("");
+      setNovaCotacaoId("");
+      setFormErrorNovo("");
+      carregarAba(abaAtiva);
+    } catch {
+      setFormErrorNovo("Erro de comunicação ao salvar lançamento.");
+    } finally {
+      setSalvandoNovo(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16 pt-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -945,6 +1012,297 @@ export default function FinanceiroPage() {
                   <div className="text-[11px] text-slate-500">Comissões</div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL: NOVO LANÇAMENTO FINANCEIRO                                         */}
+        {/* ========================================================================= */}
+        {modalNovoAberto && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in">
+            <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-100 p-6 sm:p-8 my-8">
+              {/* Cabeçalho do Modal */}
+              <div className="flex items-start justify-between border-b border-slate-100 pb-4 mb-5">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">
+                    <PlusCircle className="h-4 w-4" />
+                    Entrada Manual
+                  </div>
+                  <h2 className="text-xl font-bold text-brand-900">Novo Lançamento Financeiro</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Registre receitas de clientes, despesas operacionais ou pagamentos a fornecedores.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalNovoAberto(false);
+                    setFormErrorNovo("");
+                  }}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Formulário */}
+              <form onSubmit={handleSalvarNovoLancamento} className="space-y-4">
+                {formErrorNovo && (
+                  <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{formErrorNovo}</span>
+                  </div>
+                )}
+
+                {/* Tipo de Transação (Receita / Despesa) */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Tipo de Movimentação *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNovoTipo("RECEITA");
+                        if (novaCategoria === "PAGAMENTO_FORNECEDOR" || novaCategoria === "DESPESA_OPERACIONAL") {
+                          setNovaCategoria("VENDA_CLIENTE");
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-bold transition-all border ${
+                        novoTipo === "RECEITA"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-300 ring-2 ring-emerald-500/20"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
+                      Receita (Entrada / Crédito)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNovoTipo("DESPESA");
+                        if (novaCategoria === "VENDA_CLIENTE" || novaCategoria === "COMISSAO_AGENCIA") {
+                          setNovaCategoria("PAGAMENTO_FORNECEDOR");
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-bold transition-all border ${
+                        novoTipo === "DESPESA"
+                          ? "bg-rose-50 text-rose-800 border-rose-300 ring-2 ring-rose-500/20"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <ArrowUpRight className="h-4 w-4 text-rose-600" />
+                      Despesa (Saída / Débito)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Descrição & Categoria */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Descrição do Lançamento *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Recebimento Pacote Paris ou Tarifa Operadora"
+                      value={novaDescricao}
+                      onChange={(e) => setNovaDescricao(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm focus:border-brand-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Categoria Contábil *
+                    </label>
+                    <select
+                      value={novaCategoria}
+                      onChange={(e) => setNovaCategoria(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm bg-white focus:border-brand-900 focus:outline-none"
+                    >
+                      <option value="VENDA_CLIENTE">Venda para Cliente (Pacote / Reserva)</option>
+                      <option value="PAGAMENTO_FORNECEDOR">Pagamento a Fornecedor / Operadora</option>
+                      <option value="COMISSAO_AGENCIA">Comissão de Agência / Over</option>
+                      <option value="TAXA_CAMBIO_IOF">Taxa de Câmbio / Spread / IOF</option>
+                      <option value="REEMBOLSO">Reembolso / Estorno ao Cliente</option>
+                      <option value="DESPESA_OPERACIONAL">Despesa Operacional / Administrativa</option>
+                      <option value="OUTRO">Outras Movimentações</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Valor, Moeda & Câmbio */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Valor Original *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder="0,00"
+                      value={novoValor}
+                      onChange={(e) => setNovoValor(e.target.value === "" ? "" : Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm font-semibold focus:border-brand-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Moeda *
+                    </label>
+                    <select
+                      value={novaMoeda}
+                      onChange={(e) => {
+                        const m = e.target.value as "BRL" | "USD" | "EUR";
+                        setNovaMoeda(m);
+                        if (m === "BRL") setNovoCambio(1.0);
+                      }}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm bg-white focus:border-brand-900 focus:outline-none"
+                    >
+                      <option value="BRL">BRL (Real R$)</option>
+                      <option value="USD">USD (Dólar US$)</option>
+                      <option value="EUR">EUR (Euro €)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Cotação Câmbio {novaMoeda !== "BRL" && "*"}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      disabled={novaMoeda === "BRL"}
+                      value={novaMoeda === "BRL" ? 1.0 : novoCambio}
+                      onChange={(e) => setNovoCambio(Number(e.target.value))}
+                      className={`w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm focus:border-brand-900 focus:outline-none ${
+                        novaMoeda === "BRL" ? "bg-slate-50 text-slate-400" : "bg-white font-medium"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Prévia em BRL se moeda estrangeira */}
+                {novaMoeda !== "BRL" && typeof novoValor === "number" && novoValor > 0 && (
+                  <div className="rounded-xl bg-amber-50 p-2.5 border border-amber-200/80 text-xs text-amber-900 flex items-center justify-between">
+                    <span>Equivalente em Moeda Nacional (BRL):</span>
+                    <strong className="text-sm font-black text-brand-900">
+                      {formatBRL(novoValor * (novoCambio || 1))}
+                    </strong>
+                  </div>
+                )}
+
+                {/* Vencimento, Status & Método */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Data Vencimento *
+                    </label>
+                    <input
+                      type="date"
+                      value={novoVencimento}
+                      onChange={(e) => setNovoVencimento(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm focus:border-brand-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Status do Lançamento *
+                    </label>
+                    <select
+                      value={novoStatus}
+                      onChange={(e) => setNovoStatus(e.target.value as any)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm bg-white focus:border-brand-900 focus:outline-none"
+                    >
+                      <option value="PAGO">Pago / Liquidado (Compensado)</option>
+                      <option value="PENDENTE">Pendente (A Compensar / A Vencer)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Método de Pagamento *
+                    </label>
+                    <select
+                      value={novoMetodo}
+                      onChange={(e) => setNovoMetodo(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm bg-white focus:border-brand-900 focus:outline-none"
+                    >
+                      <option value="PIX">PIX</option>
+                      <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                      <option value="BOLETO">Boleto Bancário</option>
+                      <option value="TRANSFERENCIA">Transferência / TED</option>
+                      <option value="FATURADO">Faturado 15/30 dias</option>
+                      <option value="DINHEIRO">Dinheiro em Espécie</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Comprovante / Ref & Observações */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Documento / Comprovante (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: DOC-987456 ou Chave Pix"
+                      value={novoComprovante}
+                      onChange={(e) => setNovoComprovante(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm focus:border-brand-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Observações / Detalhes (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Parcela 1/3 referente à reserva"
+                      value={novasObs}
+                      onChange={(e) => setNovasObs(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm focus:border-brand-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Ações do Formulário */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalNovoAberto(false);
+                      setFormErrorNovo("");
+                    }}
+                    className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={salvandoNovo}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white bg-brand-900 hover:bg-brand-800 rounded-xl shadow-sm transition-all disabled:opacity-50"
+                  >
+                    {salvandoNovo ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin text-gold-400" />
+                        <span>Salvando Lançamento...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 text-gold-400" />
+                        <span>Salvar Lançamento</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
