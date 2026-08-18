@@ -9,6 +9,7 @@ import {
   CotacaoCambioRef,
   Moeda,
   DEFAULT_AGENCY_COMMISSION_PCT,
+  safeNumber,
 } from "@/lib/calculations";
 import {
   Building2,
@@ -572,11 +573,11 @@ export default function NovaCotacaoPage() {
           setErroForm(`Preencha o nome do canal ${j + 1} no Hotel "${h.hotel_nome}".`);
           return;
         }
-        if (Number(c.valor_mostrado) <= 0) {
+        if (safeNumber(c.valor_mostrado, 0) <= 0) {
           setErroForm(`O valor do canal "${c.canal_nome}" deve ser maior que zero.`);
           return;
         }
-        if (Number(c.comissao_venda_pct) >= 100) {
+        if (safeNumber(c.comissao_venda_pct, 0) >= 100) {
           setErroForm(`A comissão de venda do canal "${c.canal_nome}" deve ser menor que 100%.`);
           return;
         }
@@ -605,11 +606,11 @@ export default function NovaCotacaoPage() {
           ordem_exibicao: idx,
           canais: h.canais.map((c) => ({
             canal_nome: c.canal_nome,
-            valor_mostrado: Number(c.valor_mostrado),
-            taxas: Number(c.taxas) || 0,
+            valor_mostrado: safeNumber(c.valor_mostrado, 0),
+            taxas: safeNumber(c.taxas, 0),
             moeda: c.moeda,
-            comissao_fornecedor_pct: Number(c.comissao_fornecedor_pct),
-            comissao_venda_pct: Number(c.comissao_venda_pct),
+            comissao_fornecedor_pct: safeNumber(c.comissao_fornecedor_pct, 0),
+            comissao_venda_pct: safeNumber(c.comissao_venda_pct, 0),
             categoria_quarto: c.categoria_quarto,
             cafe_da_manha: Boolean(c.cafe_da_manha),
             reembolsavel_ate: c.reembolsavel_ate || null,

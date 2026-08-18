@@ -87,9 +87,10 @@ export async function POST(request: Request) {
     const parsed = CotacaoSchema.safeParse(body);
 
     if (!parsed.success) {
+      const primeiraMensagem = parsed.error.issues[0]?.message || "Dados de cotação inválidos";
       return NextResponse.json(
         {
-          error: "Dados de cotação inválidos",
+          error: primeiraMensagem,
           details: parsed.error.format(),
         },
         { status: 400 }
