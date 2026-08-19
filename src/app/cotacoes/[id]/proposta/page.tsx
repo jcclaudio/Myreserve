@@ -247,31 +247,31 @@ export default function PropostaClientePage() {
   return (
     <div className="min-h-screen bg-slate-100/70 pb-20 print:bg-white print:p-0 print:m-0">
       {/* Barra de Ferramentas Superior (Oculta na Impressão) */}
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3.5 shadow-sm no-print">
-        <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-3">
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 py-3 shadow-sm no-print">
+        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
           <Link
             href={`/cotacoes/${params.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-3 py-2 rounded-xl transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-3.5 py-2.5 sm:py-2 rounded-xl transition-colors text-center"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar para Cotação Interna
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
             <button
               onClick={handleCopiarWhatsApp}
               disabled={!viewModel.hasSelectedOptions}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
             >
               {copiado ? (
                 <>
                   <Check className="h-4 w-4 text-emerald-600" />
-                  Copiado para Área de Transferência!
+                  Copiado!
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4 text-emerald-700" />
-                  Copiar para WhatsApp
+                  Copiar WhatsApp
                 </>
               )}
             </button>
@@ -279,10 +279,10 @@ export default function PropostaClientePage() {
             <button
               onClick={handleImprimir}
               disabled={!viewModel.hasSelectedOptions}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-brand-900 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-800 transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-900 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-800 transition-colors cursor-pointer disabled:opacity-50 text-center"
             >
               <Printer className="h-4 w-4 text-gold-400" />
-              Imprimir / Salvar PDF (A4)
+              Imprimir / PDF
             </button>
           </div>
         </div>

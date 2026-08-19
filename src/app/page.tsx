@@ -354,11 +354,11 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Botões de Ação */}
-                      <div className="flex flex-wrap items-center gap-2 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 w-full lg:w-auto">
                         {/* Proposta Cliente */}
                         <Link
                           href={`/cotacoes/${cotacao.id}/proposta`}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition-colors"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition-colors text-center"
                           title="Visualizar Proposta Limpa para o Cliente"
                         >
                           <FileText className="h-3.5 w-3.5 text-brand-400" />
@@ -368,7 +368,7 @@ export default function DashboardPage() {
                         {/* Ver / Editar Cotação */}
                         <Link
                           href={`/cotacoes/${cotacao.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors text-center"
                         >
                           <Eye className="h-3.5 w-3.5 text-slate-500" />
                           Detalhes / Editar
@@ -379,7 +379,7 @@ export default function DashboardPage() {
                           onClick={() =>
                             handleDeletar(cotacao.id, cotacao.cliente_nome)
                           }
-                          className="inline-flex items-center justify-center rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="inline-flex items-center justify-center rounded-xl p-2.5 sm:p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
                           title="Excluir cotação"
                         >
                           <Trash2 className="h-4 w-4" />
