@@ -318,187 +318,190 @@ export default function PropostaClientePage() {
         )}
 
         {/* Folha A4 da Proposta Comercial */}
-        <div className="relative bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-200/90 p-8 sm:p-12 print-page print:rounded-none print:shadow-none print:border-none print:p-0 overflow-hidden">
+        <div className="relative bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-200/90 print-page print:rounded-none print:shadow-none print:border-none overflow-hidden">
           {/* Marca-d'água Institucional de Baixa Opacidade */}
           <ProposalWatermark />
 
-          {/* 1. Cabeçalho Oficial FixTur */}
+          {/* 1. Cabeçalho Oficial FixTur com fundo Azul Profundo Full-Bleed */}
           <ProposalHeader
             proposalNumber={viewModel.proposal.number}
             createdAtFormatado={viewModel.proposal.createdAtFormatado}
             consultantName={viewModel.consultant.name}
           />
 
-          {/* 2. Resumo da Viagem (Trip Summary) */}
-          <ProposalTripSummary
-            clientName={viewModel.client.name}
-            destination={viewModel.trip.destination}
-            checkInFormatado={viewModel.trip.checkInFormatado}
-            checkOutFormatado={viewModel.trip.checkOutFormatado}
-            nights={viewModel.trip.nights}
-            adults={viewModel.trip.adults}
-            childrenCount={viewModel.trip.children}
-            rooms={viewModel.trip.rooms}
-          />
+          {/* Corpo da Proposta com Espaçamento Limpo */}
+          <div className="relative z-10 px-6 sm:px-10 py-6 space-y-6">
+            {/* 2. Resumo da Viagem (Trip Summary Clean) */}
+            <ProposalTripSummary
+              clientName={viewModel.client.name}
+              destination={viewModel.trip.destination}
+              checkInFormatado={viewModel.trip.checkInFormatado}
+              checkOutFormatado={viewModel.trip.checkOutFormatado}
+              nights={viewModel.trip.nights}
+              adults={viewModel.trip.adults}
+              childrenCount={viewModel.trip.children}
+              rooms={viewModel.trip.rooms}
+            />
 
-          {/* HIERARQUIA PADRONIZADA DOS ITENS DA PROPOSTA (PDF / TELA) */}
-          <div className="relative z-10 space-y-6 my-6">
-            {/* 1. PASSAGENS AÉREAS (SE HOUVER) */}
-            {flightSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Plane className="h-5 w-5 text-sky-700" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    1. Passagens Aéreas
-                  </h3>
+            {/* HIERARQUIA PADRONIZADA DOS ITENS DA PROPOSTA (PDF / TELA) */}
+            <div className="space-y-6 my-6">
+              {/* 1. PASSAGENS AÉREAS (SE HOUVER) */}
+              {flightSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Plane className="h-4.5 w-4.5 text-sky-700" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      1. Passagens Aéreas
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {flightSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {flightSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 2. HOSPEDAGEM & HOTÉIS (SE HOUVER) */}
-            {viewModel.hotels.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Building2 className="h-5 w-5 text-brand-900" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    {flightSections.length > 0 ? "2. Hospedagem & Hotéis" : "1. Hospedagem & Hotéis"}
-                  </h3>
+              {/* 2. HOSPEDAGEM & HOTÉIS (SE HOUVER) */}
+              {viewModel.hotels.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Building2 className="h-4.5 w-4.5 text-brand-800" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      {flightSections.length > 0 ? "2. Hospedagem & Hotéis" : "1. Hospedagem & Hotéis"}
+                    </h3>
+                  </div>
+                  <div className="space-y-5">
+                    {viewModel.hotels.map((hotel, idx) => (
+                      <ProposalHotelCard
+                        key={hotel.id}
+                        hotel={hotel}
+                        index={idx}
+                        nights={viewModel.trip.nights}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-5">
-                  {viewModel.hotels.map((hotel, idx) => (
-                    <ProposalHotelCard
-                      key={hotel.id}
-                      hotel={hotel}
-                      index={idx}
-                      nights={viewModel.trip.nights}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 3. LOCAÇÃO DE CARRO (SE HOUVER) */}
-            {carSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Key className="h-5 w-5 text-indigo-700" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    Locação de Veículos
-                  </h3>
+              {/* 3. LOCAÇÃO DE CARRO (SE HOUVER) */}
+              {carSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Key className="h-4.5 w-4.5 text-indigo-700" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      Locação de Veículos
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {carSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {carSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 4. PARQUES TEMÁTICOS (SE HOUVER) */}
-            {parkSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Sparkles className="h-5 w-5 text-gold-600" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    Ingressos de Parques Temáticos
-                  </h3>
+              {/* 4. PARQUES TEMÁTICOS (SE HOUVER) */}
+              {parkSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Sparkles className="h-4.5 w-4.5 text-gold-600" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      Ingressos de Parques Temáticos
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {parkSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {parkSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 5. SEGURO VIAGEM (SE HOUVER) */}
-            {insuranceSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Shield className="h-5 w-5 text-teal-700" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    Seguro Viagem & Assistência
-                  </h3>
+              {/* 5. SEGURO VIAGEM (SE HOUVER) */}
+              {insuranceSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Shield className="h-4.5 w-4.5 text-teal-700" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      Seguro Viagem & Assistência
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {insuranceSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {insuranceSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 6. INGRESSOS (SE HOUVER) */}
-            {ticketSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Ticket className="h-5 w-5 text-purple-700" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    Ingressos para Atrações
-                  </h3>
+              {/* 6. INGRESSOS (SE HOUVER) */}
+              {ticketSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Ticket className="h-4.5 w-4.5 text-purple-700" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      Ingressos para Atrações
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {ticketSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {ticketSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 7. TRANSFERS & TRASLADOS (SE HOUVER) */}
-            {transferSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Car className="h-5 w-5 text-emerald-700" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    Transfers & Traslados
-                  </h3>
+              {/* 7. TRANSFERS & TRASLADOS (SE HOUVER) */}
+              {transferSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Car className="h-4.5 w-4.5 text-emerald-700" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      Transfers & Traslados
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {transferSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {transferSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* 8. PASSEIOS, TOURS E SERVIÇOS ADICIONAIS (SE HOUVER) */}
-            {otherSections.length > 0 && (
-              <div className="space-y-4 proposal-section-block break-inside-avoid">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2 section-header break-after-avoid">
-                  <Compass className="h-5 w-5 text-amber-700" />
-                  <h3 className="text-sm font-extrabold text-brand-900 uppercase tracking-wider">
-                    Passeios, Tours & Experiências
-                  </h3>
+              {/* 8. PASSEIOS, TOURS E SERVIÇOS ADICIONAIS (SE HOUVER) */}
+              {otherSections.length > 0 && (
+                <div className="space-y-4 proposal-section-block break-inside-avoid">
+                  <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2 section-header break-after-avoid">
+                    <Compass className="h-4.5 w-4.5 text-amber-700" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-slate-800 uppercase tracking-widest">
+                      Passeios, Tours & Experiências
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    {otherSections.map((sec) => (
+                      <ProposalProductSectionCard key={sec.id} section={sec} />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {otherSections.map((sec) => (
-                    <ProposalProductSectionCard key={sec.id} section={sec} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
 
-            {!viewModel.hasSelectedOptions && (
-              <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                <p className="text-xs text-slate-500 font-medium">
-                  Selecione as opções na tela de edição da cotação para que apareçam na proposta.
-                </p>
-              </div>
-            )}
+              {!viewModel.hasSelectedOptions && (
+                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-xs text-slate-500 font-normal">
+                    Selecione as opções na tela de edição da cotação para que apareçam na proposta.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Informações Importantes */}
+            <div className="break-inside-avoid proposal-section-block">
+              <ProposalImportantInfo items={viewModel.importantInformation} />
+            </div>
           </div>
 
-          {/* 4. Informações Importantes */}
-          <div className="break-inside-avoid proposal-section-block">
-            <ProposalImportantInfo items={viewModel.importantInformation} />
-          </div>
-
-          {/* 5. Rodapé Comercial & Frase Obrigatória */}
+          {/* 5. Rodapé Comercial & Frase Obrigatória com fundo Azul Profundo Full-Bleed */}
           <div className="break-inside-avoid proposal-section-block">
             <ProposalFooter
               mandatoryDisclaimer={viewModel.mandatoryDisclaimer}
@@ -512,3 +515,4 @@ export default function PropostaClientePage() {
     </div>
   );
 }
+

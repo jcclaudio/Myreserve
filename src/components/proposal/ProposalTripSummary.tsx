@@ -23,32 +23,25 @@ export default function ProposalTripSummary({
   rooms,
 }: ProposalTripSummaryProps) {
   return (
-    <div className="relative z-10 my-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-[#0B1528] to-[#111F38] p-5 sm:p-6 text-white shadow-xl shadow-slate-950/15 border border-slate-800/90 print:bg-slate-950 print:text-white">
-      {/* Glow de iluminação de luxo */}
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 h-36 w-36 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
-      <div className="absolute bottom-0 left-10 -mb-10 h-28 w-28 rounded-full bg-sky-500/10 blur-2xl pointer-events-none" />
-
-      {/* Faixa dourada no topo */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500/20 via-amber-400 to-amber-500/20" />
-
+    <div className="relative z-10 my-6 overflow-hidden rounded-2xl bg-slate-50/80 p-5 sm:p-6 border border-slate-200/90 shadow-xs">
       <div className="relative z-10 space-y-4">
         {/* LINHA 1: Cliente & Destino */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-white/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-slate-200/70">
           {/* 1. Cliente */}
           <div className="flex items-center gap-3.5">
-            <div className="h-10 w-10 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400 shadow-inner">
-              <User className="h-5 w-5" />
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-800 shadow-2xs">
+              <User className="h-4.5 w-4.5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <div className="text-[10px] font-medium tracking-widest text-slate-400 uppercase">
                 Cliente
               </div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="text-base sm:text-lg font-extrabold text-white tracking-wide">
+              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                <span className="text-base font-semibold text-slate-800 tracking-tight">
                   {clientName}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-[10px] font-semibold text-amber-300">
-                  <Sparkles className="h-2.5 w-2.5" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-50 border border-gold-200/70 text-[10px] font-medium text-gold-800">
+                  <Sparkles className="h-2.5 w-2.5 text-gold-600" />
                   Proposta Exclusiva
                 </span>
               </div>
@@ -56,19 +49,19 @@ export default function ProposalTripSummary({
           </div>
 
           {/* 2. Destino */}
-          <div className="flex items-center gap-3.5 md:border-l md:border-white/10 md:pl-6">
-            <div className="h-10 w-10 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400 shadow-inner">
-              <MapPin className="h-5 w-5" />
+          <div className="flex items-center gap-3.5 md:border-l md:border-slate-200/70 md:pl-6">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-800 shadow-2xs">
+              <MapPin className="h-4.5 w-4.5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <div className="text-[10px] font-medium tracking-widest text-slate-400 uppercase">
                 Destino da Viagem
               </div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="text-base sm:text-lg font-black text-amber-300 tracking-wide uppercase">
+              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                <span className="text-base font-semibold text-brand-900 tracking-wide uppercase">
                   {destination}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500 font-normal">
                   • Roteiro Personalizado
                 </span>
               </div>
@@ -77,22 +70,22 @@ export default function ProposalTripSummary({
         </div>
 
         {/* LINHA 2: Período & Viajantes/Acomodação */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-0.5">
           {/* 3. Período */}
           <div className="flex items-center gap-3.5">
-            <div className="h-10 w-10 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400 shadow-inner">
-              <Calendar className="h-5 w-5" />
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-800 shadow-2xs">
+              <Calendar className="h-4.5 w-4.5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <div className="text-[10px] font-medium tracking-widest text-slate-400 uppercase">
                 Período da Viagem
               </div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="text-sm sm:text-base font-bold text-slate-100">
+              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                <span className="text-sm font-medium text-slate-700">
                   {checkInFormatado} a {checkOutFormatado}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-300">
-                  <Moon className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200/60 text-xs font-medium text-slate-700">
+                  <Moon className="h-3 w-3 text-slate-500" />
                   {nights} diária{nights > 1 ? "s" : ""}
                 </span>
               </div>
@@ -100,19 +93,19 @@ export default function ProposalTripSummary({
           </div>
 
           {/* 4. Viajantes & Acomodação */}
-          <div className="flex items-center gap-3.5 md:border-l md:border-white/10 md:pl-6">
-            <div className="h-10 w-10 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400 shadow-inner">
-              <Users className="h-5 w-5" />
+          <div className="flex items-center gap-3.5 md:border-l md:border-slate-200/70 md:pl-6">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-800 shadow-2xs">
+              <Users className="h-4.5 w-4.5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <div className="text-[10px] font-medium tracking-widest text-slate-400 uppercase">
                 Viajantes & Acomodação
               </div>
-              <div className="flex items-center gap-2.5 flex-wrap text-sm sm:text-base font-bold text-slate-100">
+              <div className="flex items-center gap-2 flex-wrap text-sm font-medium text-slate-700 mt-0.5">
                 <span>{adults} adulto{adults > 1 ? "s" : ""}{childrenCount > 0 ? `, ${childrenCount} criança(s)` : ""}</span>
-                <span className="text-slate-500">•</span>
-                <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-300">
-                  <BedDouble className="h-3.5 w-3.5 text-amber-400" />
+                <span className="text-slate-300">•</span>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-600">
+                  <BedDouble className="h-3.5 w-3.5 text-brand-600" />
                   {rooms} quarto{rooms > 1 ? "s" : ""}
                 </span>
               </div>
@@ -123,3 +116,4 @@ export default function ProposalTripSummary({
     </div>
   );
 }
+
