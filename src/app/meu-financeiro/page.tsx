@@ -22,6 +22,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { CashFlowEngine } from "@/lib/cash-flow";
+
 interface ComissaoItem {
   id: string;
   valor_comissao: number;
@@ -295,6 +297,78 @@ export default function MeuFinanceiroPage() {
             </div>
           </div>
         </div>
+
+        {/* ========================================================================= */}
+        {/* ACELERADOR DE CARREIRA & METAS DE COMISSÃO (TIERS)                         */}
+        {/* ========================================================================= */}
+        {(() => {
+          const estimatedRevenue = (metricas?.totalVendasValor || 0) * 0.15;
+          const tier = CashFlowEngine.calculateConsultantTier(
+            estimatedRevenue,
+            metricas?.totalVendasValor || 0
+          );
+          return (
+            <div className="mb-8 rounded-2xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 p-6 text-white border border-gold-500/30 shadow-lg relative overflow-hidden">
+              <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 h-48 w-48 bg-gold-400/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gold-400/15 px-3 py-1 text-xs font-bold text-gold-300 border border-gold-400/30">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Plano de Carreira FixTur</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-3">
+                    <span>{tier.tierName}</span>
+                    <span className="text-sm font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-0.5 rounded-full">
+                      {tier.commissionRatePct}% de Comissão
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-xl">
+                    Sua taxa de comissionamento acelera automaticamente à medida que você atinge novos patamares de lucratividade para a agência.
+                  </p>
+                </div>
+
+                {tier.nextTier ? (
+                  <div className="lg:w-80 bg-white/5 p-4 rounded-xl border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-gold-300">Próximo Nível: {tier.nextTier.tierName}</span>
+                      <span className="text-white">{tier.nextTier.progressPct}%</span>
+                    </div>
+                    {/* Barra de Progresso */}
+                    <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-gold-400 to-amber-300 rounded-full transition-all duration-500"
+                        style={{ width: `${tier.nextTier.progressPct}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-300 text-right">
+                      Faltam <strong className="text-gold-300">{formatBRL(tier.nextTier.remainingToTarget)}</strong> para desbloquear {tier.nextTier.nextRatePct}%!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 bg-gold-400/20 text-gold-200 border border-gold-400/40 px-4 py-2 rounded-xl text-xs font-bold">
+                    <Award className="h-4 w-4 text-gold-400" />
+                    <span>Você atingiu o nível máximo de excelência (Black VIP)!</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Benefícios do Nível */}
+              <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-3">
+                <span className="text-xs font-bold text-slate-400">Benefícios Ativos:</span>
+                {tier.tierBenefits.map((b, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg"
+                  >
+                    <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                    {b}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ========================================================================= */}
         {/* FILTROS E TABELA DE LANÇAMENTOS DE COMISSÃO                               */}

@@ -86,6 +86,24 @@ export async function GET(request: Request) {
     // 7. Resultado Operacional Gerencial
     const resultadoOperacional = margemContribuicao - totalDespesasOperacionais;
 
+    // 8. Resultado Cambial & Financeiro (Hedge / Flutuações)
+    const paidPayables = await prisma.payable.findMany({
+      where: {
+        status: "PAID",
+        moeda_original: { in: ["USD", "EUR"] },
+      },
+    });
+
+    let resultadoCambial = 0;
+    paidPayables.forEach((p) => {
+      // Diferença entre valor original * câmbio inicial e valor_pago
+      const custoPrevisto = (p.valor_original || 0) * (p.cotacao_cambio || 1);
+      const custoEfetivo = p.valor_pago || p.valor_brl;
+      resultadoCambial += (custoPrevisto - custoEfetivo);
+    });
+
+    const resultadoLiquidoFinal = resultadoOperacional + resultadoCambial;
+
     return NextResponse.json({
       success: true,
       dre: {
@@ -105,6 +123,8 @@ export async function GET(request: Request) {
         margemContribuicaoPct: Number(margemContribuicaoPct.toFixed(2)),
         despesasOperacionais: Number(totalDespesasOperacionais.toFixed(2)),
         resultadoOperacional: Number(resultadoOperacional.toFixed(2)),
+        resultadoCambial: Number(resultadoCambial.toFixed(2)),
+        resultadoLiquidoFinal: Number(resultadoLiquidoFinal.toFixed(2)),
         totalVendasCount: sales.length,
       },
     });

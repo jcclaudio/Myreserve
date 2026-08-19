@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import FixLogo from "@/components/FixLogo";
 import {
-  PlusCircle,
   ListFilter,
   LogOut,
   TrendingUp,
@@ -18,6 +17,8 @@ import {
   Building2,
   Menu,
   X,
+  ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface UserData {
@@ -34,6 +35,7 @@ export default function Navbar() {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [exchange, setExchange] = useState<{
     usd?: number;
     eur?: number;
@@ -41,11 +43,25 @@ export default function Navbar() {
   }>({});
   const [loadingExchange, setLoadingExchange] = useState(false);
 
+  const navRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetchMe();
     fetchExchange();
     setMobileMenuOpen(false);
+    setOpenDropdown(null);
   }, [pathname]);
+
+  // Fechar dropdowns ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   async function fetchMe() {
     try {
@@ -99,16 +115,27 @@ export default function Navbar() {
     }
   };
 
+  const toggleDropdown = (name: string) => {
+    setOpenDropdown((prev) => (prev === name ? null : name));
+  };
+
   // Ocultar Navbar em páginas públicas de proposta ou no login
   if (pathname === "/login" || pathname?.includes("/proposta")) {
     return null;
   }
 
+  const isCotacoesActive = pathname === "/" || pathname?.startsWith("/cotacoes");
+  const isFinanceiroActive =
+    pathname?.startsWith("/financeiro") || pathname?.startsWith("/meu-financeiro");
+  const isOperacoesActive =
+    pathname?.startsWith("/chamados") || pathname?.startsWith("/fornecedores");
+  const isAdminActive = pathname?.startsWith("/admin");
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur shadow-sm no-print">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo FIX Turismo */}
-        <div className="flex items-center gap-3 sm:gap-6">
+        {/* Logo FIX Turismo & Navegação Principal */}
+        <div className="flex items-center gap-6 lg:gap-10" ref={navRef}>
           {/* Botão Hambúrguer Mobile */}
           {user && (
             <button
@@ -131,98 +158,165 @@ export default function Navbar() {
             <FixLogo size="sm" variant="dark" />
           </Link>
 
-          {/* Links de Navegação Desktop */}
+          {/* Links de Navegação Desktop Agrupados com Respiro */}
           {user && (
-            <nav className="hidden md:flex items-center gap-1.5 ml-2">
+            <nav className="hidden md:flex items-center gap-2 lg:gap-3">
+              {/* 1. Cotações (Histórico) */}
               <Link
                 href="/"
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  pathname === "/"
-                    ? "bg-brand-900 text-white shadow-sm"
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                  isCotacoesActive
+                    ? "bg-brand-900 text-white shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
                 }`}
               >
-                <ListFilter className="h-3.5 w-3.5" />
-                Histórico
+                <ListFilter className="h-4 w-4" />
+                Cotações
               </Link>
 
-              <Link
-                href="/cotacoes/nova"
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  pathname === "/cotacoes/nova"
-                    ? "bg-brand-900 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
-                }`}
-              >
-                <PlusCircle className="h-3.5 w-3.5 text-gold-400" />
-                Nova Cotação
-              </Link>
-
-              {/* Meu Financeiro */}
-              <Link
-                href="/meu-financeiro"
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  pathname?.startsWith("/meu-financeiro")
-                    ? "bg-brand-900 text-gold-300 shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
-                }`}
-              >
-                <TrendingUp className="h-3.5 w-3.5 text-gold-400" />
-                Meu Financeiro
-              </Link>
-
-              {/* Módulo Financeiro Geral (Admin/Gestor) */}
-              {(user.role === "ADMIN" || user.role === "FINANCEIRO") && (
-                <Link
-                  href="/financeiro"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                    pathname?.startsWith("/financeiro")
-                      ? "bg-brand-900 text-gold-300 shadow-sm"
+              {/* 2. Submenu Financeiro */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown("financeiro")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    isFinanceiroActive
+                      ? "bg-brand-900 text-gold-300 shadow-xs"
                       : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
                   }`}
                 >
-                  <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
-                  Financeiro Geral
-                </Link>
-              )}
+                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                  <span>Financeiro</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      openDropdown === "financeiro" ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
 
-              {/* Operações & Chamados */}
-              <Link
-                href="/chamados"
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  pathname?.startsWith("/chamados")
-                    ? "bg-brand-900 text-gold-300 shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
-                }`}
-              >
-                <LifeBuoy className="h-3.5 w-3.5 text-indigo-400" />
-                Operações & SLA
-              </Link>
+                {openDropdown === "financeiro" && (
+                  <div className="absolute left-0 top-full mt-2 w-56 rounded-2xl bg-white p-2 shadow-xl border border-slate-200/90 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <Link
+                      href="/meu-financeiro"
+                      onClick={() => setOpenDropdown(null)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
+                        pathname?.startsWith("/meu-financeiro")
+                          ? "bg-brand-50 text-brand-900"
+                          : "text-slate-700 hover:bg-slate-50 hover:text-brand-900"
+                      }`}
+                    >
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-50 text-gold-600 border border-gold-200/60">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <div>Meu Financeiro</div>
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          Minhas comissões & extrato
+                        </div>
+                      </div>
+                    </Link>
 
-              {/* Fornecedores */}
-              <Link
-                href="/fornecedores"
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                  pathname?.startsWith("/fornecedores")
-                    ? "bg-brand-900 text-gold-300 shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
-                }`}
-              >
-                <Building2 className="h-3.5 w-3.5 text-gold-400" />
-                Fornecedores
-              </Link>
+                    {(user.role === "ADMIN" || user.role === "FINANCEIRO") && (
+                      <Link
+                        href="/financeiro"
+                        onClick={() => setOpenDropdown(null)}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors mt-1 ${
+                          pathname?.startsWith("/financeiro")
+                            ? "bg-brand-50 text-brand-900"
+                            : "text-slate-700 hover:bg-slate-50 hover:text-brand-900"
+                        }`}
+                      >
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+                          <FileSpreadsheet className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <div>Financeiro Geral</div>
+                          <div className="text-[10px] text-slate-400 font-normal">
+                            DRE, pagáveis & recebíveis
+                          </div>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
 
-              {/* Módulo Administração */}
+              {/* 3. Submenu Operações */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown("operacoes")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                    isOperacoesActive
+                      ? "bg-brand-900 text-gold-300 shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
+                  }`}
+                >
+                  <LifeBuoy className="h-4 w-4 text-indigo-500" />
+                  <span>Operações</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      openDropdown === "operacoes" ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {openDropdown === "operacoes" && (
+                  <div className="absolute left-0 top-full mt-2 w-56 rounded-2xl bg-white p-2 shadow-xl border border-slate-200/90 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <Link
+                      href="/chamados"
+                      onClick={() => setOpenDropdown(null)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
+                        pathname?.startsWith("/chamados")
+                          ? "bg-brand-50 text-brand-900"
+                          : "text-slate-700 hover:bg-slate-50 hover:text-brand-900"
+                      }`}
+                    >
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200/60">
+                        <LifeBuoy className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <div>Chamados & SLA</div>
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          Central de atendimento
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/fornecedores"
+                      onClick={() => setOpenDropdown(null)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors mt-1 ${
+                        pathname?.startsWith("/fornecedores")
+                          ? "bg-brand-50 text-brand-900"
+                          : "text-slate-700 hover:bg-slate-50 hover:text-brand-900"
+                      }`}
+                    >
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-50 text-gold-600 border border-gold-200/60">
+                        <Building2 className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <div>Fornecedores</div>
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          Parceiros e comissões
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Administração (Apenas Admin) */}
               {user.role === "ADMIN" && (
                 <Link
                   href="/admin/usuarios"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                    pathname?.startsWith("/admin")
-                      ? "bg-brand-900 text-gold-300 shadow-sm"
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all ${
+                    isAdminActive
+                      ? "bg-brand-900 text-gold-300 shadow-xs"
                       : "text-slate-600 hover:bg-slate-100 hover:text-brand-900"
                   }`}
                 >
-                  <Users className="h-3.5 w-3.5 text-gold-500" />
+                  <Users className="h-4 w-4 text-gold-500" />
                   Administração
                 </Link>
               )}
@@ -232,45 +326,49 @@ export default function Navbar() {
 
         {/* Cotação de Câmbio Desktop & Usuário */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Widget Câmbio Desktop */}
-          <div className="hidden lg:flex items-center gap-3 rounded-full bg-slate-50 px-3.5 py-1.5 border border-slate-200 text-xs text-slate-600 shadow-2xs">
-            <div className="flex items-center gap-1.5 font-semibold text-brand-900">
+          {/* Widget Câmbio Desktop - Design Executivo Slim */}
+          <div className="hidden lg:inline-flex items-center gap-3 rounded-full bg-slate-50/90 hover:bg-slate-100/70 px-3.5 py-1.5 border border-slate-200/90 text-xs shadow-2xs transition-colors whitespace-nowrap">
+            <div className="flex items-center gap-1.5 font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
               <TrendingUp className="h-3.5 w-3.5 text-gold-500" />
-              <span>Câmbio:</span>
+              <span>Câmbio</span>
             </div>
 
+            <span className="h-3 w-px bg-slate-200" />
+
             {exchange.usd && exchange.eur ? (
-              <div className="flex items-center gap-2.5">
-                <span className="font-semibold text-slate-800">
-                  USD:{" "}
-                  <span className="text-emerald-700 font-bold">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-baseline gap-1.5 text-xs">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">USD</span>
+                  <span className="font-bold text-emerald-700">
                     R$ {exchange.usd.toFixed(2)}
                   </span>
                 </span>
-                <span className="text-slate-300">|</span>
-                <span className="font-semibold text-slate-800">
-                  EUR:{" "}
-                  <span className="text-brand-700 font-bold">
+
+                <span className="h-3 w-px bg-slate-200" />
+
+                <span className="inline-flex items-baseline gap-1.5 text-xs">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">EUR</span>
+                  <span className="font-bold text-brand-900">
                     R$ {exchange.eur.toFixed(2)}
                   </span>
                 </span>
               </div>
             ) : exchange.error ? (
               <span
-                className="text-amber-600 flex items-center gap-1"
+                className="text-amber-600 flex items-center gap-1 text-[11px]"
                 title={exchange.error}
               >
-                <AlertCircle className="h-3.5 w-3.5" /> Manual
+                <AlertCircle className="h-3.5 w-3.5" /> Modo Manual
               </span>
             ) : (
-              <span className="text-slate-400">Carregando câmbio...</span>
+              <span className="text-slate-400 text-[11px]">Carregando...</span>
             )}
 
             <button
               onClick={fetchExchange}
               disabled={loadingExchange}
               title="Atualizar Cotação"
-              className="ml-1 text-slate-400 hover:text-brand-900 transition-colors cursor-pointer"
+              className="text-slate-400 hover:text-brand-900 p-0.5 rounded-full hover:bg-slate-200/60 transition-colors cursor-pointer"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${
@@ -316,7 +414,7 @@ export default function Navbar() {
 
       {/* Menu Mobile Drawer */}
       {mobileMenuOpen && user && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-3 shadow-lg">
+        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-4 shadow-lg">
           {/* Câmbio Mobile */}
           <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
             <div className="flex items-center gap-2">
@@ -341,106 +439,114 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Links de Navegação Mobile */}
-          <nav className="grid grid-cols-1 gap-1">
-            <Link
-              href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                pathname === "/"
-                  ? "bg-brand-900 text-white shadow-xs"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              <ListFilter className="h-4 w-4 text-slate-500" />
-              Histórico de Cotações
-            </Link>
-
-            <Link
-              href="/cotacoes/nova"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                pathname === "/cotacoes/nova"
-                  ? "bg-brand-900 text-white shadow-xs"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              <PlusCircle className="h-4 w-4 text-gold-500" />
-              Nova Cotação
-            </Link>
-
-            <Link
-              href="/meu-financeiro"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                pathname?.startsWith("/meu-financeiro")
-                  ? "bg-brand-900 text-gold-300 shadow-xs"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              <TrendingUp className="h-4 w-4 text-gold-500" />
-              Meu Financeiro
-            </Link>
-
-            {(user.role === "ADMIN" || user.role === "FINANCEIRO") && (
+          {/* Links de Navegação Mobile Agrupados */}
+          <div className="space-y-3">
+            {/* Cotações */}
+            <div>
               <Link
-                href="/financeiro"
+                href="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                  pathname?.startsWith("/financeiro")
+                  pathname === "/"
+                    ? "bg-brand-900 text-white shadow-xs"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                <ListFilter className="h-4 w-4 text-slate-500" />
+                Cotações & Histórico
+              </Link>
+            </div>
+
+            {/* Grupo Financeiro */}
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3.5">
+                Financeiro
+              </div>
+              <Link
+                href="/meu-financeiro"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
+                  pathname?.startsWith("/meu-financeiro")
                     ? "bg-brand-900 text-gold-300 shadow-xs"
                     : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                <DollarSign className="h-4 w-4 text-emerald-500" />
-                Financeiro Geral
+                <TrendingUp className="h-4 w-4 text-gold-500" />
+                Meu Financeiro (Comissões)
               </Link>
-            )}
 
-            <Link
-              href="/chamados"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                pathname?.startsWith("/chamados")
-                  ? "bg-brand-900 text-gold-300 shadow-xs"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              <LifeBuoy className="h-4 w-4 text-indigo-500" />
-              Operações & Chamados SLA
-            </Link>
+              {(user.role === "ADMIN" || user.role === "FINANCEIRO") && (
+                <Link
+                  href="/financeiro"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
+                    pathname?.startsWith("/financeiro")
+                      ? "bg-brand-900 text-gold-300 shadow-xs"
+                      : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                  Financeiro Geral & DRE
+                </Link>
+              )}
+            </div>
 
-            <Link
-              href="/fornecedores"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                pathname?.startsWith("/fornecedores")
-                  ? "bg-brand-900 text-gold-300 shadow-xs"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              <Building2 className="h-4 w-4 text-gold-500" />
-              Fornecedores & Parceiros
-            </Link>
+            {/* Grupo Operações */}
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3.5">
+                Operações
+              </div>
+              <Link
+                href="/chamados"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
+                  pathname?.startsWith("/chamados")
+                    ? "bg-brand-900 text-gold-300 shadow-xs"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                <LifeBuoy className="h-4 w-4 text-indigo-500" />
+                Operações & Chamados SLA
+              </Link>
 
+              <Link
+                href="/fornecedores"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
+                  pathname?.startsWith("/fornecedores")
+                    ? "bg-brand-900 text-gold-300 shadow-xs"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                <Building2 className="h-4 w-4 text-gold-500" />
+                Fornecedores & Parceiros
+              </Link>
+            </div>
+
+            {/* Grupo Administração */}
             {user.role === "ADMIN" && (
-              <Link
-                href="/admin/usuarios"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
-                  pathname?.startsWith("/admin")
-                    ? "bg-brand-900 text-gold-300 shadow-xs"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <Users className="h-4 w-4 text-gold-500" />
-                Administração de Usuários
-              </Link>
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3.5">
+                  Gestão
+                </div>
+                <Link
+                  href="/admin/usuarios"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-colors ${
+                    pathname?.startsWith("/admin")
+                      ? "bg-brand-900 text-gold-300 shadow-xs"
+                      : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <Users className="h-4 w-4 text-gold-500" />
+                  Administração de Usuários
+                </Link>
+              </div>
             )}
-          </nav>
+          </div>
 
           {/* Perfil & Sair no Mobile */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-900 text-gold-300 font-bold text-xs border border-gold-400/40">
                 {user.nome.slice(0, 2).toUpperCase()}
@@ -464,4 +570,3 @@ export default function Navbar() {
     </header>
   );
 }
-
