@@ -2,10 +2,11 @@ module.exports = {
   apps: [
     {
       name: "myreserve-app",
-      script: "npm",
-      args: "start",
-      instances: "max",
-      exec_mode: "cluster",
+      script: "server.js",
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "1G",
       env: {
         NODE_ENV: "production",
         PORT: 3000,
@@ -13,3 +14,4 @@ module.exports = {
     },
   ],
 };
+

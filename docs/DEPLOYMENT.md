@@ -48,27 +48,37 @@ ser seguido da remoção das duas variáveis do ambiente.
 
 ## Procedimento de deploy
 
-### Opção 1: Via Docker / Painel ICP Integrator (Recomendado)
+### Opção 1: Pipeline Automatizada GitHub Actions (Docker Compose via SFTP + SSH)
 
-O repositório possui uma pipeline no GitHub Actions configurada para testar e publicar automaticamente uma imagem Docker no **GitHub Container Registry (GHCR)**: `ghcr.io/<seu-usuario>/<seu-repo>:latest`.
+O repositório possui uma pipeline em `.github/workflows/main.yml` que testa o código, gera o arquivo `.env` de produção, empacota e envia os arquivos do projeto via SFTP para a VPS e executa `docker compose up -d --build` no terminal SSH.
 
-#### Configuração no Painel ICP:
-1. **Imagem:** `ghcr.io/<seu-usuario>/myreserve:latest` (ou via compose com `docker-compose.prod.yml`).
-2. **Mapeamento de Portas:** Porta do Container `3000` -> Porta Host `3000` (ou porta desejada).
-3. **Volume Persistente (Obrigatório):** Mapear diretório ou volume do host para `/app/data`.
-4. **Variáveis de Ambiente:**
-   - `NODE_ENV=production`
-   - `PORT=3000`
-   - `DATABASE_URL=file:/app/data/myreserve.db`
-   - `JWT_SECRET=<segredo-aleatorio-32-chars>`
-   - `SEED_ADMIN_EMAIL=admin@seudominio.com.br`
-   - `SEED_ADMIN_PASSWORD=SuaSenhaForte123!`
-   - `COOKIE_SECURE=true` (ou `false` se testar em HTTP antes do SSL)
-   - `NEXT_PUBLIC_APP_URL=https://seudominio.com.br`
+#### Configuração dos Secrets no GitHub (Settings > Secrets and variables > Actions):
+- **Conexão VPS**:
+  - `VPS_HOST`: IP ou host do servidor VPS.
+  - `VPS_USERNAME`: `root` (ou usuário com permissão Docker).
+  - `VPS_PASSWORD`: Senha do usuário na VPS.
+  - `VPS_PORT`: Porta SSH (padrão `22`).
+  - `VPS_REMOTE_PATH`: Diretório de destino na VPS (ex: `/var/www/myreserve` ou `/root/myreserve`).
+
+- **Aplicação & Banco de Dados**:
+  - `JWT_SECRET`: Chave secreta JWT (mínimo 32 caracteres).
+  - `DB_ROOT_PASSWORD`: Senha do usuário root do MySQL (container `db`).
+  - `DB_NAME`: Nome do banco de dados (padrão: `myreserve`).
+  - `DB_USER`: Usuário do banco de dados (padrão: `myreserve`).
+  - `DB_PASSWORD`: Senha do usuário do banco de dados.
+  - `SEED_ADMIN_EMAIL`: E-mail do administrador inicial (ex: `admin@seudominio.com.br`).
+  - `SEED_ADMIN_PASSWORD`: Senha do administrador inicial.
+  - `NEXT_PUBLIC_APP_URL`: URL pública da aplicação (ex: `https://seudominio.com.br`).
+  - `COOKIE_SECURE`: `true` (HTTPS) ou `false` (HTTP).
+
+#### Pré-requisitos na VPS:
+1. Docker e Docker Compose instalados (`docker compose`).
+2. Porta 3000 liberada ou proxy reverso (Nginx / Caddy / Traefik) apontando para a porta 3000.
 
 ---
 
-### Opção 2: Via Código Fonte / PM2 no Integrator
+### Opção 2: Via Docker / Painel ICP Integrator
+
 
 1. Faça backup do arquivo SQLite persistente antes de alterar a aplicação.
 2. Envie somente o código e confirme que o volume que contém `/app/data` não será substituído.

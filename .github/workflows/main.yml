@@ -1,121 +1,107 @@
-name: Deploy em Produção — VPS
+name: CI/CD Pipeline - Deploy to VPS (Docker Compose via SFTP & SSH)
 
 on:
   push:
     branches:
       - main
-      - master
   workflow_dispatch:
 
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false
-
 jobs:
-  # =========================================================================
-  # 1. TESTES E VALIDAÇÃO DE BUILD (CI)
-  # =========================================================================
-  build-and-test:
-    name: Testes e Validação
+  build-and-deploy:
+    name: Test & Deploy with Docker Compose to VPS
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: "mysql://ci_user:ci_pass@localhost:3306/ci_db"
-      JWT_SECRET: "ci-test-jwt-secret-key-1234567890-min-32-chars"
-      NEXT_TELEMETRY_DISABLED: 1
 
     steps:
-      - name: Checkout do Código
+      - name: 📥 Clonar repositório
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: ⚙️ Configurar Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
-      - name: Instalar Dependências
+      - name: 📦 Instalar dependências
         run: npm ci
 
-      - name: Gerar Prisma Client
-        run: npx prisma generate
-
-      - name: Checagem de Tipos (TypeScript)
-        run: npx tsc --noEmit
-
-      - name: Executar Testes Automatizados (Vitest)
+      - name: 🧪 Executar testes automatizados
         run: npm test
 
-  # =========================================================================
-  # 2. DEPLOY AUTOMÁTICO NA VPS VIA SSH
-  # =========================================================================
-  deploy-vps:
-    name: Deploy na VPS
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+      - name: 🔐 Gerar arquivo .env para produção
+        run: |
+          cat << 'EOF' > .env
+          NODE_ENV=production
+          PORT=${{ secrets.PORT || '3000' }}
+          DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD || 'root_prod_password' }}
+          DB_NAME=${{ secrets.DB_NAME || 'myreserve' }}
+          DB_USER=${{ secrets.DB_USER || 'myreserve' }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD || 'myreserve_prod_pass' }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          COOKIE_SECURE=${{ secrets.COOKIE_SECURE || 'true' }}
+          NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+          NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'MyReserve' }}
+          EXCHANGE_API_URL=${{ secrets.EXCHANGE_API_URL || 'https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL' }}
+          SEED_ADMIN_EMAIL=${{ secrets.SEED_ADMIN_EMAIL || 'agente@myreserve.com.br' }}
+          SEED_ADMIN_PASSWORD=${{ secrets.SEED_ADMIN_PASSWORD || 'admin123' }}
+          EOF
 
-    steps:
-      - name: Executar Deploy Remoto via SSH
+      - name: 📦 Empacotar projeto para envio SFTP
+        run: |
+          tar --exclude='node_modules' \
+              --exclude='.next' \
+              --exclude='.git' \
+              --exclude='.github' \
+              --exclude='coverage' \
+              --exclude='.vitest' \
+              --exclude='scratch' \
+              --exclude='tmp' \
+              --exclude='deploy.tar.gz' \
+              -czf deploy.tar.gz .
+
+      - name: 🚀 Transferir arquivos via SFTP/SCP para a VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME || 'root' }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "deploy.tar.gz"
+          target: "/tmp"
+          rm: true
+
+      - name: 💻 Executar Docker Compose no terminal SSH da VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER || secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          username: ${{ secrets.VPS_USERNAME || 'root' }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          script_stop: true
-          envs: |
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            SEED_ADMIN_PASSWORD=${{ secrets.SEED_ADMIN_PASSWORD }}
-            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
           script: |
-            TARGET_DIR="${{ secrets.VPS_TARGET_DIR || '/var/www/myreserve' }}"
-            REPO_URL="https://github.com/${{ github.repository }}.git"
+            set -e
+            TARGET_DIR="${{ secrets.VPS_REMOTE_PATH || '/var/www/myreserve' }}"
 
-            echo "=== [1/5] Preparando diretório de destino: $TARGET_DIR ==="
-            if [ ! -d "$TARGET_DIR" ]; then
-              echo "Diretório não encontrado. Clonando repositório..."
-              mkdir -p "$(dirname "$TARGET_DIR")"
-              git clone "$REPO_URL" "$TARGET_DIR"
-              cd "$TARGET_DIR"
+            echo "📂 Garantindo existência do diretório de destino: $TARGET_DIR"
+            mkdir -p "$TARGET_DIR"
+
+            echo "📦 Descompactando novos arquivos do projeto..."
+            tar -xzf /tmp/deploy.tar.gz -C "$TARGET_DIR"
+            rm -f /tmp/deploy.tar.gz
+
+            cd "$TARGET_DIR"
+
+            echo "🐳 Subindo containers com Docker Compose..."
+            if docker compose version &> /dev/null; then
+              docker compose up -d --build
+            elif docker-compose --version &> /dev/null; then
+              docker-compose up -d --build
             else
-              echo "Diretório existente. Atualizando código..."
-              cd "$TARGET_DIR"
-              git fetch --all
-              git reset --hard origin/${{ github.ref_name }}
-              git pull origin ${{ github.ref_name }}
+              echo "❌ Docker Compose não foi encontrado na VPS. Por favor, instale o Docker e o plugin Docker Compose."
+              exit 1
             fi
 
-            echo "=== [2/5] Configurando variáveis de ambiente (.env) ==="
-            if [ -n "$JWT_SECRET" ]; then
-              echo "Atualizando .env com secrets configurados no GitHub..."
-              cat <<EOF > .env
-            NODE_ENV=production
-            PORT=3000
-            DATABASE_URL=mysql://myreserve:${DB_PASSWORD:-myreserve_prod_pass}@db:3306/myreserve
-            DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root_prod_password}
-            DB_NAME=myreserve
-            DB_USER=myreserve
-            DB_PASSWORD=${DB_PASSWORD:-myreserve_prod_pass}
-            JWT_SECRET=${JWT_SECRET}
-            COOKIE_SECURE=true
-            NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-            NEXT_PUBLIC_APP_NAME=MyReserve
-            EXCHANGE_API_URL=https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL
-            SEED_ADMIN_EMAIL=agente@myreserve.com.br
-            SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-admin123}
-            EOF
-            fi
+            echo "🧹 Limpando imagens Docker antigas/órfãs..."
+            docker image prune -f || true
 
-            echo "=== [3/5] Construindo e iniciando containers Docker ==="
-            docker compose -f docker-compose.yml up -d --build --remove-orphans
-
-            echo "=== [4/5] Limpando imagens antigas e não utilizadas ==="
-            docker image prune -f
-
-            echo "=== [5/5] Verificando status dos containers ==="
-            docker compose -f docker-compose.yml ps
-            echo "Deploy concluído com sucesso!"
+            echo "=========================================================="
+            echo "🎉 Containers Docker (MySQL + Next.js) rodando na VPS!"
+            echo "=========================================================="
