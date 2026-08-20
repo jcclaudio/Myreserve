@@ -70,7 +70,7 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           source: "deploy.tar.gz"
           target: "/tmp"
-          rm: true
+          rm: false
 
       - name: 💻 Executar Docker Compose no terminal SSH da VPS
         uses: appleboy/ssh-action@v1.0.3
