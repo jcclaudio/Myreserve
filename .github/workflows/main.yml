@@ -36,7 +36,7 @@ jobs:
           DB_NAME=${{ secrets.DB_NAME || 'myreserve' }}
           DB_USER=${{ secrets.DB_USER || 'myreserve' }}
           DB_PASSWORD=${{ secrets.DB_PASSWORD || 'myreserve_prod_pass' }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'minha-chave-secreta-jwt-de-producao-com-ao-menos-32-chars' }}
           COOKIE_SECURE=${{ secrets.COOKIE_SECURE || 'true' }}
           NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
           NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'MyReserve' }}
@@ -47,16 +47,19 @@ jobs:
 
       - name: 📦 Empacotar projeto para envio SFTP
         run: |
-          tar --exclude='node_modules' \
-              --exclude='.next' \
-              --exclude='.git' \
-              --exclude='.github' \
-              --exclude='coverage' \
-              --exclude='.vitest' \
-              --exclude='scratch' \
-              --exclude='tmp' \
-              --exclude='deploy.tar.gz' \
-              -czf deploy.tar.gz .
+          mkdir -p /tmp/pkg_build
+          tar --warning=no-file-changed \
+              --exclude='./node_modules' \
+              --exclude='./.next' \
+              --exclude='./.git' \
+              --exclude='./.github' \
+              --exclude='./coverage' \
+              --exclude='./.vitest' \
+              --exclude='./scratch' \
+              --exclude='./tmp' \
+              -czf /tmp/pkg_build/deploy.tar.gz .
+          mv /tmp/pkg_build/deploy.tar.gz ./deploy.tar.gz
+          rm -rf /tmp/pkg_build
 
       - name: 🚀 Transferir arquivos via SFTP/SCP para a VPS
         uses: appleboy/scp-action@v0.1.7
