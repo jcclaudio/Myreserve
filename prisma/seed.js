@@ -6,37 +6,31 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
-  const isProduction = process.env.NODE_ENV === "production";
   const email = (process.env.SEED_ADMIN_EMAIL || "agente@myreserve.com.br").toLowerCase().trim();
-  const password = process.env.SEED_ADMIN_PASSWORD || "FixTur@Admin2026";
+  const password = process.env.SEED_ADMIN_PASSWORD || "admin123";
   const nome = process.env.SEED_ADMIN_NAME || "Administrador MyReserve";
 
-  // Verificar se já existe algum usuário ou o usuário específico
-  let usuario = await prisma.usuario.findUnique({ where: { email } });
-  
-  if (!usuario) {
-    // Se não encontrou o email específico, verifica se já existe outro ADMIN
-    const adminExistente = await prisma.usuario.findFirst({ where: { role: "ADMIN" } });
-    if (adminExistente) {
-      console.log(`Administrador existente encontrado: ${adminExistente.email}`);
-      usuario = adminExistente;
-    } else {
-      console.log(`Criando usuário inicial: ${email}`);
-      usuario = await prisma.usuario.create({
-        data: {
-          nome,
-          email,
-          senha_hash: await bcrypt.hash(password, 10),
-          role: "ADMIN",
-        },
-      });
-      console.log("Usuário administrador inicial criado com sucesso.");
-    }
-  } else {
-    console.log(`Usuário inicial já existe: ${email}`);
-  }
+  const senha_hash = await bcrypt.hash(password, 10);
 
-  console.log("Usuário inicial pronto.");
+  // Upsert garante a criação ou atualização da senha
+  const usuario = await prisma.usuario.upsert({
+    where: { email },
+    update: {
+      nome,
+      senha_hash,
+      role: "ADMIN",
+      ativo: true,
+    },
+    create: {
+      nome,
+      email,
+      senha_hash,
+      role: "ADMIN",
+      ativo: true,
+    },
+  });
+
+  console.log(`Usuário ${usuario.email} configurado com sucesso com a senha solicitada.`);
 
   // Criar cotação inicial baseada no Caso de Teste 1 do Prompt Mestre
   const cotacaoExistente = await prisma.cotacao.findFirst({

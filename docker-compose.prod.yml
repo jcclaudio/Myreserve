@@ -1,18 +1,38 @@
+name: myreserve-prod
+
 services:
+  db:
+    image: mysql:8.0
+    container_name: fixtur-myreserve-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_prod_password}
+      MYSQL_DATABASE: ${DB_NAME:-myreserve}
+      MYSQL_USER: ${DB_USER:-myreserve}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-myreserve_prod_pass}
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_prod_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     image: ghcr.io/jcclaudio/myreserve:latest
     container_name: fixtur-myreserve-app
     restart: always
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     env_file:
       - icontainer.env
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: file:/app/data/myreserve.db
-    volumes:
-      - sqlite_data:/app/data
+      DATABASE_URL: mysql://${DB_USER:-myreserve}:${DB_PASSWORD:-myreserve_prod_pass}@db:3306/${DB_NAME:-myreserve}
 
 volumes:
-  sqlite_data:
+  mysql_prod_data:

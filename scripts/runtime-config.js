@@ -42,7 +42,7 @@ function loadRuntimeEnvironment(projectRoot) {
 
 function getSqliteDatabasePath(databaseUrl) {
   if (typeof databaseUrl !== 'string' || !databaseUrl.startsWith('file:')) {
-    throw new Error('DATABASE_URL deve usar o formato SQLite file:.');
+    return null;
   }
   const filePath = databaseUrl.slice('file:'.length);
   if (!filePath || filePath.includes('?') || filePath.includes('#')) {
@@ -55,12 +55,19 @@ function configureRuntime({ projectRoot, production } = {}) {
   loadRuntimeEnvironment(projectRoot);
   const isProduction = production === undefined ? process.env.NODE_ENV === 'production' : production;
   const databaseUrl = process.env.DATABASE_URL;
-  const databasePath = getSqliteDatabasePath(databaseUrl);
-  const isAbsolutePath = path.posix.isAbsolute(databasePath) || path.win32.isAbsolute(databasePath);
-  if (isProduction && !isAbsolutePath) {
-    throw new Error('Em produção, DATABASE_URL deve apontar para um caminho SQLite absoluto e persistente.');
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL é obrigatória no ambiente.');
   }
-  if (isProduction) fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+
+  const databasePath = getSqliteDatabasePath(databaseUrl);
+  if (databasePath) {
+    const isAbsolutePath = path.posix.isAbsolute(databasePath) || path.win32.isAbsolute(databasePath);
+    if (isProduction && !isAbsolutePath) {
+      throw new Error('Em produção, DATABASE_URL SQLite deve apontar para um caminho absoluto e persistente.');
+    }
+    if (isProduction) fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+  }
+
   return { databaseUrl, databasePath };
 }
 

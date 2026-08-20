@@ -11,7 +11,7 @@ process.env.PORT = process.env.PORT || '3000';
 configureRuntime({ projectRoot });
 requireJwtSecret();
 
-console.log('[MyReserve] Inicializando produção com SQLite persistente.');
+console.log('[MyReserve] Inicializando aplicação...');
 execFileSync(process.execPath, [path.join(projectRoot, 'scripts', 'prepare-database.js')], {
   cwd: projectRoot,
   env: process.env,

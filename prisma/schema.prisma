@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -68,7 +68,7 @@ model CotacaoVersao {
   versao_numero           Int
   motivo_reabertura       String
   reaberto_por_usuario_id String
-  snapshot_dados          String   // JSON snapshot completo da cotação
+  snapshot_dados          String   @db.Text // JSON snapshot completo da cotação
   criado_em               DateTime @default(now())
 
   @@map("cotacoes_versoes")
@@ -81,7 +81,7 @@ model HotelCotado {
   hotel_nome     String
   link_hotel     String?       // URL segura https://
   foto_url       String?       // Foto opcional
-  descricao      String?       // Breve descrição opcional
+  descricao      String?       @db.Text // Breve descrição opcional
   ordem_exibicao Int           @default(0)
   canais         CanalCotado[]
 
@@ -101,7 +101,7 @@ model CanalCotado {
   categoria_quarto        String
   cafe_da_manha           Boolean
   reembolsavel_ate        DateTime?
-  observacoes             String?     @default("")
+  observacoes             String?     @db.Text
   escolhido_manual        Boolean     @default(false)
   
   // Campos calculados
@@ -128,7 +128,7 @@ model QuoteProductSection {
   cotacao      Cotacao              @relation(fields: [cotacao_id], references: [id], onDelete: Cascade)
   product_type String               // FLIGHT | TRANSFER | TICKET | TOUR | TRAVEL_INSURANCE | CAR_RENTAL | PARK | CUSTOM_SERVICE
   title        String
-  description  String?
+  description  String?              @db.Text
   sort_order   Int                  @default(0)
   enabled      Boolean              @default(true)
   created_at   DateTime             @default(now())
@@ -144,14 +144,14 @@ model QuoteProductOption {
   section_id    String
   section       QuoteProductSection @relation(fields: [section_id], references: [id], onDelete: Cascade)
   title         String
-  description   String?
+  description   String?             @db.Text
   photo_url     String?
   external_link String?
   price         Float               @default(0)
   currency      String              @default("BRL")
   selected      Boolean             @default(false)
   sort_order    Int                 @default(0)
-  metadata      String?             @default("{}") // JSON validado por schemas Zod por tipo
+  metadata      String?             @db.Text // JSON validado por schemas Zod por tipo
   created_at    DateTime            @default(now())
   updated_at    DateTime            @updatedAt
 
@@ -200,7 +200,7 @@ model Sale {
   cancelled_amount            Float                  @default(0)
   net_sale_amount             Float
   
-  observacoes                 String?                @default("")
+  observacoes                 String?                @db.Text
   
   criado_em                   DateTime               @default(now())
   atualizado_em               DateTime               @updatedAt
@@ -302,9 +302,9 @@ model Fornecedor {
   email_plantao         String?   @default("")
   prazo_faturamento_dias Int      @default(15)
   chave_pix             String?   @default("")
-  dados_bancarios       String?   @default("")
+  dados_bancarios       String?   @db.Text
   ativo                 Boolean   @default(true)
-  observacoes           String?   @default("")
+  observacoes           String?   @db.Text
   criado_em             DateTime  @default(now())
   atualizado_em         DateTime  @updatedAt
 
@@ -314,7 +314,7 @@ model Fornecedor {
 model CommissionPlan {
   id                 String                 @id @default(uuid())
   nome               String
-  descricao          String?                @default("")
+  descricao          String?                @db.Text
   base_calculo       String                 @default("AGENCY_REVENUE")
   percentual_padrao  Float                  @default(10.0)
   ativo              Boolean                @default(true)
@@ -344,7 +344,7 @@ model ConsultantCommission {
   status                String          @default("ACCRUED")
   data_elegibilidade    DateTime?
   data_pagamento        DateTime?
-  motivo_ajuste         String?         @default("")
+  motivo_ajuste         String?         @db.Text
   
   criado_em             DateTime        @default(now())
   atualizado_em         DateTime        @updatedAt
@@ -360,7 +360,7 @@ model ChamadoSuporte {
   id              String    @id @default(uuid())
   ticket_number   String    @unique // Ex: TCK-2026-0001
   titulo          String
-  descricao       String
+  descricao       String    @db.Text
   categoria       String    @default("SUPORTE_GERAL") // ALTERACAO_RESERVA | NO_SHOW_EMERGENCIA | UPGRADE_QUARTO | CANCELAMENTO_REEMBOLSO | PROBLEMA_PAGAMENTO | SUPORTE_GERAL
   prioridade      String    @default("MEDIA") // BAIXA | MEDIA | ALTA | CRITICA_EMERGENCIA
   
@@ -384,7 +384,7 @@ model ChamadoSuporte {
   responsavel_id  String?
   responsavel     Usuario?  @relation("ChamadosAtribuidos", fields: [responsavel_id], references: [id], onDelete: SetNull)
   
-  solucao         String?   @default("")
+  solucao         String?   @db.Text
   resolvido_em    DateTime?
   
   criado_em       DateTime  @default(now())
@@ -400,7 +400,7 @@ model FinancialAuditLog {
   entidade      String
   entidade_id   String
   acao          String
-  detalhes_json String   @default("{}")
+  detalhes_json String   @db.Text
   ip_origem     String?  @default("")
   criado_em     DateTime @default(now())
 
@@ -424,7 +424,7 @@ model TransacaoFinanceira {
   data_pagamento   DateTime?
   metodo_pagamento String    @default("PIX")
   comprovante_ref  String?   @default("")
-  observacoes      String?   @default("")
+  observacoes      String?   @db.Text
 
   cotacao_id       String?
   cotacao          Cotacao?  @relation(fields: [cotacao_id], references: [id], onDelete: SetNull)

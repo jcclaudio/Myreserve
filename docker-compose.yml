@@ -1,23 +1,45 @@
+name: myreserve-prod
+
 services:
+  db:
+    image: mysql:8.0
+    container_name: fixtur-myreserve-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_prod_password}
+      MYSQL_DATABASE: ${DB_NAME:-myreserve}
+      MYSQL_USER: ${DB_USER:-myreserve}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-myreserve_prod_pass}
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_prod_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: fixtur-myreserve-app
     restart: always
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: file:/app/data/myreserve.db
-      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET fora do repositório}
+      DATABASE_URL: mysql://${DB_USER:-myreserve}:${DB_PASSWORD:-myreserve_prod_pass}@db:3306/${DB_NAME:-myreserve}
+      JWT_SECRET: ${JWT_SECRET:-minha-chave-secreta-jwt-de-producao-com-ao-menos-32-chars}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-    volumes:
-      - sqlite_data:/app/data
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-MyReserve}
+      EXCHANGE_API_URL: ${EXCHANGE_API_URL:-https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-agente@myreserve.com.br}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin123}
 
 volumes:
-  sqlite_data:
+  mysql_prod_data:
