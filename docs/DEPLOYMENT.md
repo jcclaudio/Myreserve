@@ -80,8 +80,8 @@ O repositório possui uma pipeline em `.github/workflows/main.yml` que testa o c
 ### Opção 2: Via Docker / Painel ICP Integrator
 
 
-1. Faça backup do arquivo SQLite persistente antes de alterar a aplicação.
-2. Envie somente o código e confirme que o volume que contém `/app/data` não será substituído.
+1. Faça backup do banco de dados MySQL (`mysqldump` ou snapshot de volume) antes de alterar a aplicação.
+2. Envie o código atualizado e confirme que as variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`) estão mantidas.
 3. No diretório `/app`, execute `bash deploy-integrator.sh`.
 4. Reinicie com `pm2 restart myreserve --update-env` (ou `pm2 start app.yaml` no primeiro deploy).
 5. Verifique `GET /login`, `GET /api/auth/me` e o login com o usuário inicial.
@@ -93,7 +93,7 @@ aplicável até que uma baseline de migrations seja criada e validada separadame
 ## Rollback sem perda de dados
 
 1. Pare apenas o processo da aplicação.
-2. Restaure a versão anterior do código e reinicie o PM2 apontando para o mesmo `/app/data/myreserve.db`.
-3. Não remova o banco, o volume ou o diretório `data`.
-4. Se o schema da nova versão tiver sido alterado, restaure o backup do banco feito antes do deploy antes de religar a versão anterior.
+2. Restaure a versão anterior do código e reinicie o PM2 apontando para a mesma base MySQL.
+3. Não remova o container de banco, o volume ou dados de persistência.
+4. Se o schema da nova versão tiver sido alterado, restaure o dump do banco MySQL feito antes do deploy antes de religar a versão anterior.
 

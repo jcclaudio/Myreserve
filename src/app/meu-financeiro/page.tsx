@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { CashFlowEngine } from "@/lib/cash-flow";
+import { buildCsvRow } from "@/lib/csv-sanitizer";
 
 interface ComissaoItem {
   id: string;
@@ -151,21 +152,23 @@ export default function MeuFinanceiroPage() {
       "Data_Criacao",
     ];
 
-    const rows = comissoes.map((c) => [
-      c.sale.sale_number,
-      `"${c.sale.cliente_nome.replace(/"/g, '""')}"`,
-      `"${c.sale.destino.replace(/"/g, '""')}"`,
-      c.sale.gross_sale_amount.toFixed(2),
-      c.base_calculo_valor.toFixed(2),
-      `${c.percentual_aplicado}%`,
-      c.valor_comissao.toFixed(2),
-      c.status,
-      new Date(c.criado_em).toLocaleDateString("pt-BR"),
-    ]);
+    const rows = comissoes.map((c) =>
+      buildCsvRow([
+        c.sale.sale_number,
+        c.sale.cliente_nome,
+        c.sale.destino,
+        c.sale.gross_sale_amount.toFixed(2),
+        c.base_calculo_valor.toFixed(2),
+        `${c.percentual_aplicado}%`,
+        c.valor_comissao.toFixed(2),
+        c.status,
+        new Date(c.criado_em).toLocaleDateString("pt-BR"),
+      ])
+    );
 
     const csvContent =
       "data:text/csv;charset=utf-8," +
-      [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+      [headers.join(";"), ...rows].join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

@@ -17,13 +17,20 @@ export async function POST(
 
     const section = await prisma.quoteProductSection.findFirst({
       where: { id: params.sectionId, cotacao_id: params.id },
-      include: { options: true },
+      include: { options: true, cotacao: { select: { criado_por_usuario_id: true } } },
     });
 
     if (!section) {
       return NextResponse.json(
         { error: "Seção não encontrada nesta cotação." },
         { status: 404 }
+      );
+    }
+
+    if (user.role === "AGENTE" && section.cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para adicionar opções nesta cotação." },
+        { status: 403 }
       );
     }
 
@@ -87,6 +94,22 @@ export async function PATCH(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const cotacao = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+      select: { criado_por_usuario_id: true },
+    });
+
+    if (!cotacao) {
+      return NextResponse.json({ error: "Cotação não encontrada." }, { status: 404 });
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para modificar opções nesta cotação." },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

@@ -156,7 +156,7 @@ export default function FornecedoresPage() {
           <div className="py-20 text-center text-slate-400 text-sm">Carregando parceiros...</div>
         ) : fornecedores.length === 0 ? (
           <div className="rounded-2xl bg-white p-12 text-center border border-slate-200 text-slate-500 text-sm">
-            Nenhum fornecedor cadastrado ainda. Clique em "Cadastrar Fornecedor" para iniciar.
+            Nenhum fornecedor cadastrado ainda. Clique em &quot;Cadastrar Fornecedor&quot; para iniciar.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

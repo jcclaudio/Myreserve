@@ -15,6 +15,30 @@ export async function PATCH(
       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     }
 
+    const chamadoExistente = await prisma.chamadoSuporte.findUnique({
+      where: { id: params.id },
+      select: { id: true, criado_por_id: true, responsavel_id: true },
+    });
+
+    if (!chamadoExistente) {
+      return NextResponse.json(
+        { error: "Chamado não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    // Regra de segurança (RBAC): Agente só pode atualizar chamados de sua autoria ou sob sua responsabilidade
+    if (
+      user.role === "AGENTE" &&
+      chamadoExistente.criado_por_id !== user.id &&
+      chamadoExistente.responsavel_id !== user.id
+    ) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você só pode interagir com chamados criados por você ou sob sua responsabilidade." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { status, responsavel_id, solucao } = body;
 

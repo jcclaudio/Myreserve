@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { createSaleFromCotacao } from "@/lib/sales-service";
 
@@ -15,11 +16,30 @@ export async function POST(
       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     }
 
+    const cotacao = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+      select: { id: true, criado_por_usuario_id: true },
+    });
+
+    if (!cotacao) {
+      return NextResponse.json({ error: "Cotação não encontrada." }, { status: 404 });
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você só pode converter cotações de sua própria autoria em vendas." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
+
+    // Atribui a comissão ao consultor que gerou a cotação
+    const consultorId = user.role === "AGENTE" ? user.id : (body.consultorId || cotacao.criado_por_usuario_id);
 
     const sale = await createSaleFromCotacao({
       cotacaoId: params.id,
-      consultorId: user.id,
+      consultorId,
       clienteDocumento: body.clienteDocumento,
       clienteEmail: body.clienteEmail,
       clienteTelefone: body.clienteTelefone,

@@ -2,7 +2,7 @@
 > **Documento de Contexto Técnico & Engenharia de Software para IA**  
 > **Projeto:** FixTur / MyReserve (Sistema Integrado de Viagens, Finanças e Suporte Operacional)  
 > **Versão:** 3.5.0 (Travel Quote Builder Master & Multiproduct Proposal Edition)  
-> **Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma ORM + SQLite/PostgreSQL + Jose (JWT) + Vitest  
+> **Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS + Prisma ORM + MySQL 8.0 + Jose (JWT) + Vitest  
 
 ---
 

@@ -39,6 +39,20 @@ export async function createSaleFromCotacao(options: CreateSaleOptions) {
     throw new Error("Cotação não encontrada.");
   }
 
+  // Proteção contra duplicidade: verificar se já existe uma venda ativa para esta cotação
+  const vendaExistente = await prisma.sale.findFirst({
+    where: {
+      cotacao_id: cotacaoId,
+      status: { not: "CANCELLED" },
+    },
+  });
+
+  if (vendaExistente) {
+    throw new Error(
+      `Esta cotação já possui uma venda ativa associada (${vendaExistente.sale_number}). Operação duplicada rejeitada.`
+    );
+  }
+
   // Obter canais escolhidos ou o de menor custo nos hotéis
   const canaisEscolhidos = (cotacao.hoteis || []).map((h) => {
     const manual = h.canais.find((c) => c.escolhido_manual);
@@ -127,14 +141,38 @@ export async function createSaleFromCotacao(options: CreateSaleOptions) {
   const contributionMarginPct =
     grossSaleAmount > 0 ? (contributionMargin / grossSaleAmount) * 100 : 0;
 
-  // Gerar número sequencial de venda
-  const countSales = await prisma.sale.count();
-  const saleNumber = `VEN-${new Date().getFullYear()}-${String(
-    countSales + 1
-  ).padStart(4, "0")}`;
+  // Gerar número sequencial de venda confiável
+  const anoAtual = new Date().getFullYear();
+  const ultimaVenda = await prisma.sale.findFirst({
+    where: { sale_number: { startsWith: `VEN-${anoAtual}-` } },
+    orderBy: { criado_em: "desc" },
+    select: { sale_number: true },
+  });
+
+  let nextSeq = 1;
+  if (ultimaVenda?.sale_number) {
+    const parts = ultimaVenda.sale_number.split("-");
+    const lastNum = parseInt(parts[2], 10);
+    if (!isNaN(lastNum)) nextSeq = lastNum + 1;
+  }
+  const saleNumber = `VEN-${anoAtual}-${String(nextSeq).padStart(4, "0")}`;
 
   const totalParcelas = Math.max(1, options.totalParcelas || 1);
-  const valorParcela = Number((grossSaleAmount / totalParcelas).toFixed(2));
+  const totalVendaFinal = Number(grossSaleAmount.toFixed(2));
+
+  // Cálculo de parcelas com conservação estrita de centavos (soma exata das parcelas === totalVendaFinal)
+  const parcelasValores: number[] = [];
+  let somaParcial = 0;
+  for (let p = 1; p <= totalParcelas; p++) {
+    if (p === totalParcelas) {
+      const ultimaParcela = Number((totalVendaFinal - somaParcial).toFixed(2));
+      parcelasValores.push(ultimaParcela);
+    } else {
+      const valorBase = Number((totalVendaFinal / totalParcelas).toFixed(2));
+      parcelasValores.push(valorBase);
+      somaParcial += valorBase;
+    }
+  }
 
   // Transação Atômica no Prisma
   const novaVenda = await prisma.$transaction(async (tx) => {
@@ -245,19 +283,20 @@ export async function createSaleFromCotacao(options: CreateSaleOptions) {
       });
     }
 
-    // 4. Criar Contas a Receber (Receivables)
+    // 4. Criar Contas a Receber (Receivables) com conservação de centavos
     for (let p = 1; p <= totalParcelas; p++) {
       const dataVenc = new Date(cotacao.data_ida);
       dataVenc.setMonth(dataVenc.getMonth() + (p - 1));
+      const valorDestaParcela = parcelasValores[p - 1];
 
       await tx.receivable.create({
         data: {
           sale_id: sale.id,
           numero_parcela: p,
           total_parcelas: totalParcelas,
-          valor_parcela: valorParcela,
+          valor_parcela: valorDestaParcela,
           valor_pago: 0,
-          saldo: valorParcela,
+          saldo: valorDestaParcela,
           data_vencimento: dataVenc,
           metodo_pagamento: options.metodoPagamento || "PIX",
           status: "OPEN",

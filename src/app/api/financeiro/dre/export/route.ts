@@ -55,40 +55,60 @@ export async function GET() {
 
     const resultadoOperacional = margemContribuicao - despesasOperacionais;
 
-    // Gerar CSV com cabeçalho e linhas
-    let csv = `DEMONSTRATIVO DE RESULTADO DO EXERCICIO (DRE GERENCIAL) - FIXTUR\n`;
-    csv += `Data de Emissao:;${new Date().toLocaleDateString("pt-BR")}\n\n`;
-    csv += `Conta Gerencial;Valor (R$);Percentual (%)\n`;
-    csv += `(+) GMV / Faturamento Bruto;${gmv.toFixed(2)};100.00%\n`;
-    csv += `(-) Cancelamentos e Reembolsos;-${reembolsos.toFixed(2)};${(
-      (reembolsos / (gmv || 1)) *
-      100
-    ).toFixed(2)}%\n`;
-    csv += `(=) Venda Liquida;${vendaLiquida.toFixed(2)};${(
-      (vendaLiquida / (gmv || 1)) *
-      100
-    ).toFixed(2)}%\n`;
-    csv += `(-) Custos de Fornecedores Hoteleiros;-${custosFornecedores.toFixed(
-      2
-    )};${((custosFornecedores / (gmv || 1)) * 100).toFixed(2)}%\n`;
-    csv += `(=) Receita Bruta da Agencia (Lucro Bruto);${receitaAgencia.toFixed(
-      2
-    )};${((receitaAgencia / (gmv || 1)) * 100).toFixed(2)}%\n`;
-    csv += `(-) Comissoes dos Consultores;-${comissoesConsultores.toFixed(
-      2
-    )};${((comissoesConsultores / (receitaAgencia || 1)) * 100).toFixed(2)}%\n`;
-    csv += `(-) Taxas de Meios de Pagamento;-${taxasProcessamento.toFixed(
-      2
-    )};${((taxasProcessamento / (receitaAgencia || 1)) * 100).toFixed(2)}%\n`;
-    csv += `(=) Margem de Contribuicao Liquida;${margemContribuicao.toFixed(
-      2
-    )};${((margemContribuicao / (receitaAgencia || 1)) * 100).toFixed(2)}%\n`;
-    csv += `(-) Despesas Operacionais Fixas / Administrativas;-${despesasOperacionais.toFixed(
-      2
-    )};-\n`;
-    csv += `(=) RESULTADO OPERACIONAL GERENCIAL;${resultadoOperacional.toFixed(
-      2
-    )};-\n`;
+    const linhas = [
+      ["DEMONSTRATIVO DE RESULTADO DO EXERCICIO (DRE GERENCIAL) - FIXTUR"],
+      [`Data de Emissao: ${new Date().toLocaleDateString("pt-BR")}`],
+      [],
+      ["Conta Gerencial", "Valor (R$)", "Percentual (%)"],
+      ["(+) GMV / Faturamento Bruto", gmv.toFixed(2), "100.00%"],
+      [
+        "(-) Cancelamentos e Reembolsos",
+        `-${reembolsos.toFixed(2)}`,
+        `${((reembolsos / (gmv || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(=) Venda Liquida",
+        vendaLiquida.toFixed(2),
+        `${((vendaLiquida / (gmv || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(-) Custos de Fornecedores Hoteleiros",
+        `-${custosFornecedores.toFixed(2)}`,
+        `${((custosFornecedores / (gmv || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(=) Receita Bruta da Agencia (Lucro Bruto)",
+        receitaAgencia.toFixed(2),
+        `${((receitaAgencia / (gmv || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(-) Comissoes dos Consultores",
+        `-${comissoesConsultores.toFixed(2)}`,
+        `${((comissoesConsultores / (receitaAgencia || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(-) Taxas de Meios de Pagamento",
+        `-${taxasProcessamento.toFixed(2)}`,
+        `${((taxasProcessamento / (receitaAgencia || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(=) Margem de Contribuicao Liquida",
+        margemContribuicao.toFixed(2),
+        `${((margemContribuicao / (receitaAgencia || 1)) * 100).toFixed(2)}%`,
+      ],
+      [
+        "(-) Despesas Operacionais Fixas / Administrativas",
+        `-${despesasOperacionais.toFixed(2)}`,
+        "-",
+      ],
+      [
+        "(=) RESULTADO OPERACIONAL GERENCIAL",
+        resultadoOperacional.toFixed(2),
+        "-",
+      ],
+    ];
+
+    const csv = linhas.map((cols) => cols.join(";")).join("\n");
 
     return new Response(csv, {
       status: 200,

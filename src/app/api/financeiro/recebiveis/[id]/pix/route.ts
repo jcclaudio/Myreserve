@@ -25,6 +25,7 @@ export async function GET(
             cliente_nome: true,
             cliente_telefone: true,
             destino: true,
+            consultor_id: true,
           },
         },
       },
@@ -34,6 +35,14 @@ export async function GET(
       return NextResponse.json(
         { error: "Conta a receber não encontrada." },
         { status: 404 }
+      );
+    }
+
+    // Regra de segurança (RBAC): Agente só pode gerar cobrança PIX para vendas próprias
+    if (user.role === "AGENTE" && receivable.sale?.consultor_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você só pode gerar cobranças PIX para suas próprias vendas." },
+        { status: 403 }
       );
     }
 

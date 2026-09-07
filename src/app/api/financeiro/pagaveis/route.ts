@@ -18,6 +18,11 @@ export async function GET(request: Request) {
 
     const where: any = {};
 
+    // Regra de segurança (RBAC): Agente só visualiza contas a pagar atreladas às suas próprias vendas
+    if (user.role === "AGENTE") {
+      where.sale = { consultor_id: user.id };
+    }
+
     if (status && status !== "TODOS") {
       where.status = status;
     }

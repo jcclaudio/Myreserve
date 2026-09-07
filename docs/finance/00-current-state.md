@@ -11,7 +11,7 @@
 
 Foram inspecionados exaustivamente:
 1. **Especificação de Domínio**: `PROMPT_MESTRE_SistemaCotacaoHospedagens_v1.0.md` e `SYSTEM_SPEC_FOR_AI.md`.
-2. **Camada de Dados & Persistência**: `prisma/schema.prisma` e banco SQLite local `prisma/dev.db`.
+2. **Camada de Dados & Persistência**: `prisma/schema.prisma` e banco de dados relacional MySQL 8.0.
 3. **Motor de Precificação**: `src/lib/calculations.ts` (RN-01 a RN-10).
 4. **Validações & Contratos Zod**: `src/lib/validations.ts`.
 5. **Módulos de Autenticação & RBAC**: `src/lib/auth.ts`, `src/app/api/auth/*` e `src/app/api/admin/usuarios/*`.
@@ -95,7 +95,7 @@ No código atual existem **3 conceitos distintos** identificados na auditoria:
 | **Comissão de Consultores** | Inexistente como motor. O consultor é apenas o autor (`criado_por_usuario_id`). | Impossível apurar quanto a agência deve repassar a cada agente por venda, meta ou período. | Criar `CommissionPlan`, `ConsultantCommission` e `CommissionPayoutBatch`. |
 | **"Meu Financeiro" (Agente)** | Agente vê suas transações em `/financeiro` se for perfil `AGENTE`. | Visão financeira não separa o caixa da agência do extrato de comissões do agente. | Criar painel dedicado `/meu-financeiro` para o consultor. |
 | **Imutabilidade / Snapshot** | A cotação armazena os valores calculados na data da criação. | Alterações de status ou edições não geram trilha imutável de `FinancialAdjustment`. | Implementar Snapshots financeiros e Subledger. |
-| **Precisão Decimal** | Tipos `Float` no SQLite com arredondamento `round2` via JavaScript. | Risco de discrepâncias centesimais em volumes massivos. | Migrar formalmente para `Decimal` exato no Postgres/Prisma. |
+| **Precisão Decimal** | Tipos `Float` no MySQL 8.0 com arredondamento `round2` via JavaScript e conservação estrita de centavos em parcelamento. | Risco de discrepâncias centesimais em divisões com dízima. | Algoritmo de conservação de centavos na última parcela implementado e verificado. |
 
 ---
 

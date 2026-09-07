@@ -33,7 +33,7 @@ Defina `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD` no seu `.env` local antes do p
 
 ## 🌐 Deploy em Produção (VPS Integrator / cPanel / Linux)
 
-O modo `output: 'standalone'` usa um banco SQLite persistente externo ao bundle. Consulte
+O modo `output: 'standalone'` conecta-se ao banco de dados MySQL 8.0 configurado via `DATABASE_URL`. Consulte
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) antes de publicar uma nova versão.
 
 ### Método Automatizado 1: Via Painel Integrator Node.js / cPanel
@@ -151,7 +151,7 @@ npm test
 
 - **Frontend & Backend:** Next.js 14+ (App Router, Standalone mode) + TypeScript + React
 - **Estilização & PDF:** Tailwind CSS + Lucide React + CSS `@media print` A4
-- **Banco de Dados & ORM:** Prisma ORM com SQLite (local e produção, em volume persistente)
+- **Banco de Dados & ORM:** Prisma ORM com MySQL 8.0 (Docker local e produção VPS)
 - **Autenticação:** JWT seguro em cookies HTTP-only via `jose` e hashing com `bcryptjs`
 - **Validação de Contratos:** Zod
 - **Gerenciador de Processos:** PM2 (`app.yaml` / `server.js`)

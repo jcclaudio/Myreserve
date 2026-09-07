@@ -15,6 +15,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     }
 
+    if (user.role !== "ADMIN" && user.role !== "FINANCEIRO") {
+      return NextResponse.json(
+        { error: "Acesso negado. Apenas administradores e financeiro podem liquidar recebíveis." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const valorRecebido = Number(body.valorRecebido);
 
