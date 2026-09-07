@@ -51,6 +51,14 @@ export async function GET(
       );
     }
 
+    // Regra de segurança (RBAC): Agente só pode visualizar cotações de sua própria autoria
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para visualizar esta cotação." },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json({ cotacao });
   } catch (err: any) {
     console.error("Erro ao obter cotação:", err);
@@ -82,6 +90,14 @@ export async function PUT(
       );
     }
 
+    // Regra de segurança (RBAC): Agente só pode alterar cotações de sua própria autoria
+    if (user.role === "AGENTE" && cotacaoExistente.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para alterar esta cotação." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const parsed = CotacaoSchema.safeParse(body);
 
@@ -96,7 +112,7 @@ export async function PUT(
 
     if (!data.hoteis || data.hoteis.length === 0) {
       return NextResponse.json(
-        { error: "A cotação deve conter pelo menos um hotel cotado." },
+        { error: "Acesso inválido: a cotação deve conter pelo menos um hotel cotado." },
         { status: 400 }
       );
     }
@@ -218,6 +234,25 @@ export async function PATCH(
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    const cotacaoExistente = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!cotacaoExistente) {
+      return NextResponse.json(
+        { error: "Cotação não encontrada." },
+        { status: 404 }
+      );
+    }
+
+    // Regra de segurança (RBAC): Agente só pode editar parâmetros de sua própria cotação
+    if (user.role === "AGENTE" && cotacaoExistente.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para editar esta cotação." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const {
       cliente_nome,
@@ -282,6 +317,25 @@ export async function DELETE(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const cotacaoExistente = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!cotacaoExistente) {
+      return NextResponse.json(
+        { error: "Cotação não encontrada." },
+        { status: 404 }
+      );
+    }
+
+    // Regra de segurança (RBAC): Agente só pode excluir cotações de sua própria autoria
+    if (user.role === "AGENTE" && cotacaoExistente.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para excluir esta cotação." },
+        { status: 403 }
+      );
     }
 
     await prisma.cotacao.delete({

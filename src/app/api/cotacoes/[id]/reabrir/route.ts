@@ -40,6 +40,14 @@ export async function POST(
       );
     }
 
+    // Regra de segurança (RBAC): Agente só pode reabrir suas próprias cotações
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para reabrir esta cotação." },
+        { status: 403 }
+      );
+    }
+
     // Gerar snapshot da versão atual antes de reabrir
     const snapshot = JSON.stringify(cotacao);
     const versaoNumero = cotacao.versao_atual;

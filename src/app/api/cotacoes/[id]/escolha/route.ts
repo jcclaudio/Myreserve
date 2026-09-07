@@ -22,6 +22,26 @@ export async function PATCH(
       );
     }
 
+    // Verificar se a cotação existe e se o usuário tem autorização
+    const cotacao = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+      select: { id: true, criado_por_usuario_id: true },
+    });
+
+    if (!cotacao) {
+      return NextResponse.json(
+        { error: "Cotação não encontrada." },
+        { status: 404 }
+      );
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para alterar escolhas nesta cotação." },
+        { status: 403 }
+      );
+    }
+
     // Verificar se o canal pertence a esta cotação
     const canal = await prisma.canalCotado.findFirst({
       where: {

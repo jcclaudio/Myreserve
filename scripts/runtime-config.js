@@ -53,22 +53,13 @@ function getSqliteDatabasePath(databaseUrl) {
 
 function configureRuntime({ projectRoot, production } = {}) {
   loadRuntimeEnvironment(projectRoot);
-  const isProduction = production === undefined ? process.env.NODE_ENV === 'production' : production;
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error('DATABASE_URL é obrigatória no ambiente.');
   }
 
-  const databasePath = getSqliteDatabasePath(databaseUrl);
-  if (databasePath) {
-    const isAbsolutePath = path.posix.isAbsolute(databasePath) || path.win32.isAbsolute(databasePath);
-    if (isProduction && !isAbsolutePath) {
-      throw new Error('Em produção, DATABASE_URL SQLite deve apontar para um caminho absoluto e persistente.');
-    }
-    if (isProduction) fs.mkdirSync(path.dirname(databasePath), { recursive: true });
-  }
-
-  return { databaseUrl, databasePath };
+  // A arquitetura padrão do MyReserve / FixTur é MySQL 8.0 (declarada no Prisma e Docker Compose)
+  return { databaseUrl };
 }
 
 function requireJwtSecret() {

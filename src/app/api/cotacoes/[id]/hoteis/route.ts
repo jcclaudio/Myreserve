@@ -28,6 +28,14 @@ export async function POST(
       );
     }
 
+    // Regra de segurança (RBAC): Agente só pode adicionar hotéis em suas próprias cotações
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para adicionar hotéis nesta cotação." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { hotel_nome, link_hotel, foto_url, descricao, canais } = body;
 

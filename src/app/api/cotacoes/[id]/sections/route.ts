@@ -15,6 +15,22 @@ export async function GET(
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    const cotacao = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+      select: { id: true, criado_por_usuario_id: true },
+    });
+
+    if (!cotacao) {
+      return NextResponse.json({ error: "Cotação não encontrada" }, { status: 404 });
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para visualizar as seções desta cotação." },
+        { status: 403 }
+      );
+    }
+
     const sections = await prisma.quoteProductSection.findMany({
       where: { cotacao_id: params.id },
       orderBy: { sort_order: "asc" },
@@ -55,6 +71,13 @@ export async function POST(
       return NextResponse.json(
         { error: "Cotação não encontrada" },
         { status: 404 }
+      );
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para adicionar seções nesta cotação." },
+        { status: 403 }
       );
     }
 
@@ -130,6 +153,13 @@ export async function PUT(
       return NextResponse.json(
         { error: "Cotação não encontrada" },
         { status: 404 }
+      );
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para editar seções desta cotação." },
+        { status: 403 }
       );
     }
 
@@ -211,6 +241,22 @@ export async function DELETE(
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const cotacao = await prisma.cotacao.findUnique({
+      where: { id: params.id },
+      select: { id: true, criado_por_usuario_id: true },
+    });
+
+    if (!cotacao) {
+      return NextResponse.json({ error: "Cotação não encontrada" }, { status: 404 });
+    }
+
+    if (user.role === "AGENTE" && cotacao.criado_por_usuario_id !== user.id) {
+      return NextResponse.json(
+        { error: "Acesso negado. Você não tem permissão para remover seções desta cotação." },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
